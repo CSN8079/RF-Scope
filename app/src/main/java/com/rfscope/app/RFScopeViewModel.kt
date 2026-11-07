@@ -4,11 +4,16 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rfscope.app.data.CellInfoReader
+import com.rfscope.app.data.CellularSnapshot
 import com.rfscope.app.data.RfScopeUiState
+import com.rfscope.app.data.SignalSample
 import com.rfscope.app.data.WifiScanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -17,10 +22,12 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
     private val cellReader = CellInfoReader(application)
     private val wifiScanner = WifiScanner(application)
 
-    private val _uiState = kotlinx.coroutines.flow.MutableStateFlow(RfScopeUiState())
-    val uiState: kotlinx.coroutines.flow.StateFlow<RfScopeUiState> = _uiState
+    private val _uiState = MutableStateFlow(RfScopeUiState())
+    val uiState: StateFlow<RfScopeUiState> = _uiState
 
+    private val signalHistory = ArrayDeque<SignalSample>()
     private var pollJob: Job? = null
+    private var refreshJob: Job? = null
 
     init {
         startPolling()
@@ -35,37 +42,83 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         pollJob = viewModelScope.launch {
             while (isActive) {
                 readCellularOnce()
-                delay(2_000)
+                delay(POLL_INTERVAL_MS)
             }
         }
     }
 
+    /** Manual refresh has a visible spinner and a small minimum display time. */
     fun refresh() {
-        viewModelScope.launch { readCellularOnce() }
+        if (refreshJob?.isActive == true) return
+        _uiState.update { it.copy(isRefreshing = true) }
+        refreshJob = viewModelScope.launch {
+            try {
+                readCellularOnce()
+                delay(MIN_REFRESH_FEEDBACK_MS)
+            } finally {
+                _uiState.update { it.copy(isRefreshing = false) }
+            }
+        }
+    }
+
+    fun onPermissionsChanged() {
+        refresh()
+        scanWifi()
     }
 
     fun scanWifi() {
         if (_uiState.value.wifiScanInProgress) return
-        _uiState.value = _uiState.value.copy(wifiScanInProgress = true)
+        _uiState.update { it.copy(wifiScanInProgress = true) }
         viewModelScope.launch {
             val outcome = withContext(Dispatchers.IO) { wifiScanner.scan() }
-            _uiState.value = _uiState.value.copy(
-                wifi = outcome,
-                wifiScanInProgress = false,
-            )
+            _uiState.update {
+                it.copy(
+                    wifi = outcome,
+                    wifiScanInProgress = false,
+                )
+            }
         }
     }
 
     private suspend fun readCellularOnce() {
         val snapshot = withContext(Dispatchers.IO) { cellReader.read() }
-        _uiState.value = _uiState.value.copy(
-            cellular = snapshot,
-            lastUpdatedEpochMs = System.currentTimeMillis(),
+        val now = System.currentTimeMillis()
+        appendHistory(snapshot, now)
+        _uiState.update {
+            it.copy(
+                cellular = snapshot,
+                signalHistory = signalHistory.toList(),
+                lastUpdatedEpochMs = now,
+            )
+        }
+    }
+
+    private fun appendHistory(snapshot: CellularSnapshot, timestampMs: Long) {
+        if (snapshot.status != com.rfscope.app.data.CellReadStatus.READY) return
+        if (snapshot.rsrp == null && snapshot.rsrq == null && snapshot.sinr == null) return
+
+        signalHistory.addLast(
+            SignalSample(
+                timestampMs = timestampMs,
+                rsrp = snapshot.rsrp,
+                rsrq = snapshot.rsrq,
+                sinr = snapshot.sinr,
+            ),
         )
+        while (signalHistory.size > MAX_HISTORY_SAMPLES) {
+            signalHistory.removeFirst()
+        }
     }
 
     override fun onCleared() {
         pollJob?.cancel()
+        refreshJob?.cancel()
         super.onCleared()
+    }
+
+    private companion object {
+        const val POLL_INTERVAL_MS = 2_000L
+        const val MIN_REFRESH_FEEDBACK_MS = 350L
+        const val MAX_HISTORY_SAMPLES = 60
     }
 }

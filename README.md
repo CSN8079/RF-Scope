@@ -11,8 +11,12 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - n41、n79、n28、n78、n1、GSM900 静态频段表。
 - `NR-ARFCN -> MHz` 3GPP 换算。
 - SINR < 0 dB 红色“Co-Channel Interference Risk / 同频干扰风险”提示。
-- Wi-Fi 扫描、频段/信道/频宽识别与 2.4/5/6 GHz 提示。
-- TinySA Ultra / HT8 的 BLE/USB 串口传输接口。
+- 首次启动自动请求权限；蜂窝与 Wi-Fi 权限可独立重新授权。
+- Wi-Fi 扫描、频段/信道/频宽/标准识别与 2.4/5/6 GHz 提示。
+- 手动刷新带 SPINNER、SYNC 状态和更新时间反馈。
+- n41 / FREQ / PCI / RSRP / RSRQ / SINR 重点指标卡。
+- RSRP、RSRQ、SINR 三行并行实时趋势图（最近 60 个采样点）。
+- TinySA Ultra USB 串口传输接口；HT8 作为 TinySA 的下游能力，不由手机直连。
 - SNR、-3dB Width、Harmonic、Max Hold、Averaging 算法骨架。
 
 ## 关键文件
@@ -29,9 +33,8 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 |---|---|---|---|
 | `getAllCellInfo()` / `CellInfoNr` | `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`，定位开关开启 | 同左，且用户必须授予“精确位置” | 同左 |
 | `getDataNetworkType()` / 运营商上下文 | `READ_PHONE_STATE` | `READ_PHONE_STATE` | `READ_PHONE_STATE` |
-| Wi-Fi 扫描 | `ACCESS_FINE_LOCATION`，定位开关开启 | 同左 | `NEARBY_WIFI_DEVICES`；SSID/BSSID 仍建议保留精确位置权限 |
+| Wi-Fi 扫描 | `ACCESS_FINE_LOCATION`，定位开关开启 | 同左 | `NEARBY_WIFI_DEVICES`（声明 `neverForLocation`） |
 | Wi-Fi 开关/扫描控制 | `ACCESS_WIFI_STATE`、`CHANGE_WIFI_STATE`（普通权限） | 同左 | 同左 |
-| BLE 连接 TinySA（Module 4） | 蓝牙权限（旧版模型） | `BLUETOOTH_SCAN` + `BLUETOOTH_CONNECT` | 同左 |
 | USB 串口（Module 4） | 无 Manifest 运行时权限；使用 `UsbManager.requestPermission()` | 同左 | 同左 |
 
 说明：
@@ -79,4 +82,5 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 4. 模拟器通常不会返回真实蜂窝小区，必须用带 SIM 的真机验证。
 
 > 本文档和代码骨架中的 WiFi/Telephony 行为均以公开 Android API 为准；不同厂商 ROM 的结果可能显著不同。
+
 

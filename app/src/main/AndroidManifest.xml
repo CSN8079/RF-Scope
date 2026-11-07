@@ -7,6 +7,9 @@
     <uses-feature
         android:name="android.hardware.wifi"
         android:required="false" />
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="false" />
 
     <!-- Cell identity + Wi-Fi scan results are location-linked on Android 10+. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -20,11 +23,10 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
     <!-- Android 13+ Wi-Fi runtime permission. -->
-    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
 
-    <!-- Reserved for Module 4: BLE transport to TinySA/HT8. Request only when enabled. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <application
         android:allowBackup="false"

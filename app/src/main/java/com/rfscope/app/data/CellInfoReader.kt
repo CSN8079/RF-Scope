@@ -116,15 +116,23 @@ class CellInfoReader(context: Context) {
             operator = operator,
             networkType = networkType,
             band = band,
+            bands = reportedBands.filter { it > 0 },
             frequencyMhz = frequencyMhz,
             nrarfcn = nrarfcn,
             pci = identity.pci.takeUnless { it == CellInfo.UNAVAILABLE || it < 0 },
             tac = identity.tac.takeUnless {
                 it == CellInfo.UNAVAILABLE || it < 0
             },
+            nci = identity.nci.takeUnless {
+                it < 0 || it == CellInfo.UNAVAILABLE.toLong()
+            },
             rsrp = signal?.ssRsrp.validDbm(),
             rsrq = signal?.ssRsrq.validDbm(),
             sinr = signal?.ssSinr.validDbm(),
+            csiRsrp = signal?.csiRsrp.validDbm(),
+            csiRsrq = signal?.csiRsrq.validDbm(),
+            csiSinr = signal?.csiSinr.validDbm(),
+            signalLevel = signal?.level.validLevel(),
             status = CellReadStatus.READY,
             detailEn = if (servingNr.isRegistered) {
                 "Serving NR cell"
@@ -180,6 +188,13 @@ class CellInfoReader(context: Context) {
 
     private fun Int?.validDbm(): Int? =
         this?.takeUnless { it == CellInfo.UNAVAILABLE || it == Int.MAX_VALUE }
+
+    private fun Int?.validLevel(): Int? =
+        this?.takeIf { it in 0..4 }
 }
+
+
+
+
 
 

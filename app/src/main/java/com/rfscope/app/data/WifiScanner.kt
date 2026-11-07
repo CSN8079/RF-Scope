@@ -20,12 +20,20 @@ class WifiScanner(context: Context) {
         if (!hasWifiPermissions()) {
             return WifiScanOutcome(
                 status = WifiScanStatus.PERMISSION_REQUIRED,
-                detailEn = "Precise location and Nearby Wi-Fi permission are required.",
-                detailZh = "需要精确位置与附近 Wi-Fi 设备权限。",
+                detailEn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    "Nearby Wi-Fi permission is required on Android 13+."
+                } else {
+                    "Precise location permission is required on Android 10-12."
+                },
+                detailZh = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    "Android 13+ 需要附近 Wi-Fi 设备权限。"
+                } else {
+                    "Android 10-12 需要精确位置权限。"
+                },
             )
         }
 
-        if (!isLocationEnabled()) {
+        if (needsLocationForWifi() && !isLocationEnabled()) {
             return WifiScanOutcome(
                 status = WifiScanStatus.LOCATION_DISABLED,
                 detailEn = "Turn on system Location before scanning Wi-Fi.",
@@ -92,23 +100,27 @@ class WifiScanner(context: Context) {
             widthMhz = widthFor(result.channelWidth),
             levelDbm = result.level,
             band = band,
+            standard = standardFor(result),
             hintEn = hintEn(band),
             hintZh = hintZh(band),
         )
     }
 
-    private fun hasWifiPermissions(): Boolean {
-        val fineLocation = ContextCompat.checkSelfPermission(
-            appContext,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-        ) == PackageManager.PERMISSION_GRANTED
-        val nearbyWifi = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+    private fun hasWifiPermissions(): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 appContext,
                 Manifest.permission.NEARBY_WIFI_DEVICES,
             ) == PackageManager.PERMISSION_GRANTED
-        return fineLocation && nearbyWifi
-    }
+        } else {
+            ContextCompat.checkSelfPermission(
+                appContext,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
+    private fun needsLocationForWifi(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
 
     private fun isLocationEnabled(): Boolean {
         val manager = appContext.getSystemService(LocationManager::class.java) ?: return false
@@ -152,5 +164,18 @@ class WifiScanner(context: Context) {
         "6 GHz" -> "带宽大、干扰少，但覆盖距离短。"
         else -> "未知频段。"
     }
+    private fun standardFor(result: ScanResult): String? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
+        return when (result.wifiStandard) {
+            ScanResult.WIFI_STANDARD_LEGACY -> "Wi-Fi 1/2/3"
+            ScanResult.WIFI_STANDARD_11N -> "Wi-Fi 4"
+            ScanResult.WIFI_STANDARD_11AC -> "Wi-Fi 5"
+            ScanResult.WIFI_STANDARD_11AX -> "Wi-Fi 6"
+            ScanResult.WIFI_STANDARD_11BE -> "Wi-Fi 7"
+            ScanResult.WIFI_STANDARD_11AD -> "WiGig"
+            else -> null
+        }
+    }
 }
+
 

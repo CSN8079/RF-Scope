@@ -21,7 +21,7 @@ enum class HardwareConnectionState {
 }
 
 /**
- * Transport abstraction for TinySA Ultra over BLE/USB serial.
+ * Transport abstraction for TinySA Ultra USB serial link.
  * A concrete transport owns framing, checksum, timeout and reconnection.
  */
 interface RfHardwareTransport {
@@ -38,7 +38,11 @@ interface RfHardwareTransport {
     ): Result<SpectrumSweep>
 }
 
-/** Reserved interface for the HT8 directional antenna / rotation controller. */
+interface SpectrumAnalyzerDevice : RfHardwareTransport {
+    val directionalAntenna: DirectionalAntennaController?
+}
+
+/** Optional HT8 capability exposed by the analyzer; HT8 is downstream of TinySA. */
 interface DirectionalAntennaController {
     suspend fun setAzimuthDegrees(degrees: Double): Result<Unit>
 
@@ -129,5 +133,6 @@ class RunningAverage(private var alpha: Double = 0.25) {
         average = null
     }
 }
+
 
 
