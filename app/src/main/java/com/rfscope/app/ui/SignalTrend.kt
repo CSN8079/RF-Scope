@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -33,6 +34,9 @@ import com.rfscope.app.ui.theme.ScopeLine
 import com.rfscope.app.ui.theme.ScopeMuted
 import com.rfscope.app.ui.theme.ScopePanel
 import com.rfscope.app.ui.theme.ScopeWhite
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun SignalTrendCard(history: List<SignalSample>) {
@@ -114,6 +118,31 @@ fun SignalTrendCard(history: List<SignalSample>) {
                     unit = "dB",
                     color = ScopeCyan,
                 )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 42.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = formatTrendTime(history.firstOrNull()?.timestampMs),
+                        color = ScopeMuted,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 8.sp,
+                    )
+                    Text(
+                        text = "TIME  (时间)",
+                        color = ScopeMuted,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 8.sp,
+                    )
+                    Text(
+                        text = formatTrendTime(history.lastOrNull()?.timestampMs),
+                        color = ScopeMuted,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 8.sp,
+                    )
+                }
             }
         }
     }
@@ -157,38 +186,79 @@ private fun SparkRow(
                 fontWeight = FontWeight.Bold,
             )
         }
-        Canvas(
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(38.dp),
+                .height(54.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            drawLine(
-                color = ScopeLine,
-                start = androidx.compose.ui.geometry.Offset(0f, size.height / 2f),
-                end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2f),
-                strokeWidth = 1f,
-            )
-            if (values.size >= 2) {
-                val path = Path()
-                values.forEachIndexed { index, value ->
-                    val x = index / (values.size - 1f) * size.width
-                    val normalized = ((value - range.start) / (range.endInclusive - range.start))
-                        .coerceIn(0f, 1f)
-                    val y = size.height - normalized * size.height
-                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            Column(
+                modifier = Modifier
+                    .width(36.dp)
+                    .height(54.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(axisLabel(range.endInclusive), color = ScopeMuted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+                Text(axisLabel((range.start + range.endInclusive) / 2f), color = ScopeMuted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+                Text(axisLabel(range.start), color = ScopeMuted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+            }
+            Spacer(Modifier.width(6.dp))
+            Canvas(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
+            ) {
+                for (index in 0..4) {
+                    val y = size.height * index / 4f
+                    drawLine(
+                        color = ScopeLine,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = 1f,
+                    )
                 }
-                drawPath(
-                    path = path,
-                    color = color,
-                    style = Stroke(width = 2f, cap = StrokeCap.Round),
-                )
-            } else if (values.size == 1) {
-                drawCircle(
-                    color = color,
-                    radius = 3f,
-                    center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f),
-                )
+                for (index in 0..4) {
+                    val x = size.width * index / 4f
+                    drawLine(
+                        color = ScopeLine.copy(alpha = 0.65f),
+                        start = Offset(x, 0f),
+                        end = Offset(x, size.height),
+                        strokeWidth = 1f,
+                    )
+                }
+                if (values.size >= 2) {
+                    val path = Path()
+                    values.forEachIndexed { index, value ->
+                        val x = index / (values.size - 1f) * size.width
+                        val normalized = ((value - range.start) / (range.endInclusive - range.start))
+                            .coerceIn(0f, 1f)
+                        val y = size.height - normalized * size.height
+                        if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                    }
+                    drawPath(
+                        path = path,
+                        color = color,
+                        style = Stroke(width = 2f, cap = StrokeCap.Round),
+                    )
+                } else if (values.size == 1) {
+                    drawCircle(
+                        color = color,
+                        radius = 3f,
+                        center = Offset(size.width / 2f, size.height / 2f),
+                    )
+                }
             }
         }
     }
+}
+
+private fun axisLabel(value: Float): String = value.toInt().toString()
+
+private fun formatTrendTime(epochMs: Long?): String {
+    if (epochMs == null) return "--:--"
+    return Instant.ofEpochMilli(epochMs)
+        .atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("HH:mm:ss"))
 }

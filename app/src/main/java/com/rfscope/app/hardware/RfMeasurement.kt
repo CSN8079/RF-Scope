@@ -20,6 +20,37 @@ enum class HardwareConnectionState {
     ERROR,
 }
 
+enum class AntennaType(
+    val labelEn: String,
+    val labelZh: String,
+    val detailEn: String,
+    val detailZh: String,
+) {
+    HT8_DIRECTIONAL(
+        labelEn = "HT8 Directional",
+        labelZh = "HT8 定向天线",
+        detailEn = "Directional receive antenna connected through TinySA.",
+        detailZh = "通过 TinySA 连接的定向接收天线。",
+    ),
+    YAGI_U5_V3(
+        labelEn = "Yagi U5 V3",
+        labelZh = "U5 V3 八木天线",
+        detailEn = "70 cm / 430 MHz amateur-band Yagi.",
+        detailZh = "70 cm / 430 MHz 业余频段八木天线。",
+    ),
+    TELESCOPIC_GP(
+        labelEn = "Telescopic GP",
+        labelZh = "拉杆 GP 天线",
+        detailEn = "Built-in telescopic ground-plane antenna.",
+        detailZh = "内置拉杆地网天线。",
+    ),
+    SMALL_LOOP(
+        labelEn = "Small Loop",
+        labelZh = "小环天线",
+        detailEn = "Compact high-Q receive loop.",
+        detailZh = "紧凑型高 Q 值接收小环天线。",
+    ),
+}
 /**
  * Transport abstraction for TinySA Ultra USB serial link.
  * A concrete transport owns framing, checksum, timeout and reconnection.

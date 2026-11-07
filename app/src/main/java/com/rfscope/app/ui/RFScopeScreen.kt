@@ -1,5 +1,13 @@
 package com.rfscope.app.ui
 
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import com.rfscope.app.data.UsbDeviceSummary
+import com.rfscope.app.data.UsbScanSummary
+import com.rfscope.app.hardware.AntennaType
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -76,15 +84,66 @@ fun RFScopeScreen(
     onOpenLocationSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
+    var pageName by rememberSaveable { mutableStateOf(RfScopePage.LIVE.name) }
+    var antennaName by rememberSaveable { mutableStateOf(AntennaType.HT8_DIRECTIONAL.name) }
+    val page = RfScopePage.valueOf(pageName)
+    val selectedAntenna = AntennaType.valueOf(antennaName)
+
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(ScopeBlack)
             .systemBarsPadding(),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 16.dp),
+    ) {
+        Box(Modifier.padding(horizontal = 14.dp, vertical = 14.dp)) {
+            Header(state.lastUpdatedEpochMs, state.isRefreshing)
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            when (page) {
+                RfScopePage.LIVE -> LivePage(
+                    state = state,
+                    onRequestCellularPermissions = onRequestCellularPermissions,
+                    onRefresh = onRefresh,
+                    onOpenAppSettings = onOpenAppSettings,
+                    onOpenLocationSettings = onOpenLocationSettings,
+                )
+
+                RfScopePage.WIFI -> WifiPage(
+                    state = state,
+                    onScanWifi = onScanWifi,
+                    onRequestWifiPermissions = onRequestWifiPermissions,
+                    onOpenAppSettings = onOpenAppSettings,
+                    onOpenLocationSettings = onOpenLocationSettings,
+                )
+
+                RfScopePage.HARDWARE -> HardwarePage(
+                    usb = state.usb,
+                    selectedAntenna = selectedAntenna,
+                    onAntennaSelected = { antennaName = it.name },
+                    onRefresh = onRefresh,
+                )
+            }
+        }
+        RfScopeTabBar(
+            selected = page,
+            onSelected = { pageName = it.name },
+        )
+    }
+}
+
+@Composable
+private fun LivePage(
+    state: RfScopeUiState,
+    onRequestCellularPermissions: () -> Unit,
+    onRefresh: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    onOpenLocationSettings: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { Header(state.lastUpdatedEpochMs, state.isRefreshing) }
         item {
             CellularStatusBanner(
                 snapshot = state.cellular,
@@ -105,6 +164,23 @@ fun RFScopeScreen(
             item { InterferenceWarning(state.cellular.sinr) }
         }
         item { CellDetailsPanel(state.cellular) }
+        item { FooterNote() }
+    }
+}
+
+@Composable
+private fun WifiPage(
+    state: RfScopeUiState,
+    onScanWifi: () -> Unit,
+    onRequestWifiPermissions: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    onOpenLocationSettings: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         item {
             WifiPanel(
                 outcome = state.wifi,
@@ -115,11 +191,90 @@ fun RFScopeScreen(
                 onOpenLocationSettings = onOpenLocationSettings,
             )
         }
-        item { HardwarePanel() }
         item { FooterNote() }
     }
 }
 
+@Composable
+private fun HardwarePage(
+    usb: UsbScanSummary,
+    selectedAntenna: AntennaType,
+    onAntennaSelected: (AntennaType) -> Unit,
+    onRefresh: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item { HardwarePanel(selectedAntenna) }
+        item { AntennaSelector(selectedAntenna, onAntennaSelected) }
+        item { UsbDevicePanel(usb, onRefresh) }
+        item { FooterNote() }
+    }
+}
+
+@Composable
+private fun RfScopeTabBar(
+    selected: RfScopePage,
+    onSelected: (RfScopePage) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(ScopePanel)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        RfScopePage.entries.forEach { page ->
+            PageTab(
+                page = page,
+                selected = page == selected,
+                onClick = { onSelected(page) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PageTab(
+    page: RfScopePage,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick)
+            .background(if (selected) ScopePanelAlt else Color.Transparent)
+            .padding(vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = page.labelEn,
+            color = if (selected) ScopeGreen else ScopeMuted,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 10.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            letterSpacing = 0.7.sp,
+        )
+        Text(
+            text = "(${page.labelZh})",
+            color = if (selected) ScopeGreenDim else ScopeMuted,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 8.sp,
+        )
+        Box(
+            Modifier
+                .width(24.dp)
+                .height(2.dp)
+                .background(if (selected) ScopeGreen else Color.Transparent),
+        )
+    }
+}
 @Composable
 private fun Header(lastUpdatedEpochMs: Long?, isRefreshing: Boolean) {
     Row(
@@ -680,29 +835,29 @@ private fun WifiRow(network: WifiNetwork) {
 }
 
 @Composable
-private fun HardwarePanel() {
+private fun HardwarePanel(selectedAntenna: AntennaType) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title = "HARDWARE LINK", subtitle = "硬件接口")
         ScopeCard {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 DetailLine("TINYSA ULTRA", "频谱仪", "USB / NOT CONNECTED")
-                DetailLine("HT8 ANTENNA", "定向天线", "VIA TINYSA / NOT CONNECTED")
+                DetailLine("ANTENNA PROFILE", "天线配置", "${selectedAntenna.labelEn} (${selectedAntenna.labelZh})")
                 ScopeDivider()
                 Text(
-                    text = "PHONE → TINYSA ULTRA → HT8 ANTENNA",
+                    text = "PHONE → TINYSA ULTRA → ANTENNA",
                     color = ScopeCyan,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "手机只通过 USB 连接 TinySA；HT8 连接在频谱仪侧，不应由手机直接搜索或配对。",
+                    text = "手机只通过 USB 连接 TinySA；HT8、八木、拉杆 GP 和小环天线都连接在频谱仪侧。",
                     color = ScopeMuted,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 9.sp,
                 )
                 Text(
-                    text = "USB HOST (OTG): INTERFACE READY / DRIVER PENDING  (接口已预留，串口驱动待实现)",
+                    text = "USB HOST (OTG): INTERFACE READY / SERIAL DRIVER PENDING  (接口已预留，串口驱动待实现)",
                     color = ScopeMuted,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 9.sp,
@@ -712,6 +867,167 @@ private fun HardwarePanel() {
     }
 }
 
+@Composable
+private fun AntennaSelector(
+    selected: AntennaType,
+    onSelected: (AntennaType) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(title = "ANTENNA TYPE", subtitle = "天线类型")
+        ScopeCard {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                AntennaType.entries.forEach { antenna ->
+                    AntennaOption(
+                        antenna = antenna,
+                        selected = antenna == selected,
+                        onClick = { onSelected(antenna) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AntennaOption(
+    antenna: AntennaType,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(3.dp))
+            .clickable(onClick = onClick)
+            .background(if (selected) ScopePanelAlt else Color.Transparent)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(
+            Modifier
+                .padding(top = 4.dp)
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(if (selected) ScopeGreen else ScopeLine),
+        )
+        Spacer(Modifier.width(9.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = "${antenna.labelEn}  (${antenna.labelZh})",
+                color = if (selected) ScopeGreen else ScopeWhite,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 11.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            )
+            Text(
+                text = "${antenna.detailEn}  (${antenna.detailZh})",
+                color = ScopeMuted,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 9.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UsbDevicePanel(
+    usb: UsbScanSummary,
+    onRefresh: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(
+            title = "USB HOST",
+            subtitle = "USB 主机",
+            action = {
+                TextButton(onClick = onRefresh) {
+                    Text("RESCAN  (重新检测)", color = ScopeGreenDim, fontSize = 10.sp)
+                }
+            },
+        )
+        ScopeCard {
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                if (!usb.hostSupported) {
+                    Text(
+                        text = "USB HOST API UNAVAILABLE  (设备不支持 USB 主机或系统未开放)",
+                        color = ScopeAmber,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 10.sp,
+                    )
+                } else if (usb.devices.isEmpty()) {
+                    Text(
+                        text = "USB HOST: AVAILABLE  (USB 主机可用)",
+                        color = ScopeGreenDim,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 10.sp,
+                    )
+                    Text(
+                        text = "NO USB DEVICE DETECTED  (未检测到 USB 设备)",
+                        color = ScopeAmber,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 10.sp,
+                    )
+                    Text(
+                        text = "检查 OTG 转接头、数据线、TinySA 电源和 USB 串口模式。",
+                        color = ScopeMuted,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 9.sp,
+                    )
+                } else {
+                    usb.devices.forEach { device ->
+                        UsbDeviceRow(device)
+                    }
+                }
+                Text(
+                    text = "DETECTION ONLY / SERIAL DRIVER PENDING  (目前只检测 USB 设备，串口驱动待实现)",
+                    color = ScopeMuted,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 9.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UsbDeviceRow(device: UsbDeviceSummary) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = if (device.likelyTinySa) "LIKELY TINYSA / 可能是 TinySA" else "USB DEVICE / USB 设备",
+            color = if (device.likelyTinySa) ScopeGreen else ScopeWhite,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "${device.product ?: "Unknown product"}  (${device.manufacturer ?: "unknown"})",
+            color = ScopeWhite,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 10.sp,
+        )
+        Text(
+            text = "VID: ${hexId(device.vendorId)}  PID: ${hexId(device.productId)}",
+            color = ScopeCyan,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 9.sp,
+        )
+        Text(
+            text = "CDC SERIAL: ${if (device.hasSerialInterface) "FOUND" else "NOT FOUND"}  •  PERMISSION: ${if (device.permissionGranted) "GRANTED" else "NOT GRANTED"}",
+            color = ScopeMuted,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 9.sp,
+        )
+        ScopeDivider()
+    }
+}
+
+private enum class RfScopePage(
+    val labelEn: String,
+    val labelZh: String,
+) {
+    LIVE("LIVE", "实时"),
+    WIFI("WI-FI", "Wi-Fi"),
+    HARDWARE("HARDWARE", "硬件"),
+}
 @Composable
 private fun FooterNote() {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -865,6 +1181,8 @@ private enum class BannerTone {
 
 private fun formatMhz(value: Double): String = String.format(Locale.US, "%.2f", value)
 
+private fun hexId(value: Int): String = String.format(Locale.US, "0x%04X", value)
+
 private fun formatNci(nci: Long?): String =
     nci?.let { "0x" + it.toString(16).uppercase(Locale.US) } ?: "—"
 
@@ -961,3 +1279,4 @@ private fun RFScopePreview() {
         )
     }
 }
+

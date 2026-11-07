@@ -3,26 +3,22 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.2.0 (versionCode 2)
+Version: 0.3.0 (versionCode 3)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-07 (Asia/Shanghai)
-APK SHA-256: 1697c2f7f849a33bd0556a15c96bc4d3f760bdd65a04aa562e89b0959439a775
-Size: 24546879 bytes
+APK SHA-256: 0e70a5f82789ae24f113fa2a09de96e346642806be38d87ac46c6b8a259bc1a5
+Size: 24535643 bytes
 
-Changes in 0.2.0:
-- Automatic first-launch permission request.
-- Separate cellular and Wi-Fi permission actions with Settings fallback.
-- Android 13+ Wi-Fi scan now uses NEARBY_WIFI_DEVICES with neverForLocation.
-- Visible refresh spinner / SYNC state.
-- Highlighted n41, FREQ, PCI, RSRP, RSRQ, SINR tiles.
-- Three parallel signal trend charts (RSRP, RSRQ, SINR).
-- Corrected hardware hierarchy: PHONE -> TINYSA ULTRA -> HT8 ANTENNA.
-- Added NCI, SSB bands, CSI metrics and signal level where Android exposes them.
+Changes in 0.3.0:
+- LIVE / WI-FI / HARDWARE bottom-page navigation.
+- Signal trend charts now include grid lines, vertical scale labels and time axis.
+- Antenna profiles: HT8 directional, Yagi U5 V3, telescopic GP, small loop.
+- USB Host detection with VID/PID, CDC serial interface and permission state.
+- USB device detection runs alongside the 2-second cellular refresh.
 
 Notes:
-- Requires a real Android phone with SIM for meaningful cellular telemetry.
+- Debug certificate; not suitable for Play Store publishing.
+- TinySA serial protocol driver is still pending; USB detection is diagnostic only.
 - NSA/SA NR band/frequency visibility depends on modem and OEM ROM.
-- TinySA USB serial transport is reserved; it is not yet implemented.
-

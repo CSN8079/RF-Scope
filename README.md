@@ -14,6 +14,10 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - 首次启动自动请求权限；蜂窝与 Wi-Fi 权限可独立重新授权。
 - Wi-Fi 扫描、频段/信道/频宽/标准识别与 2.4/5/6 GHz 提示。
 - 手动刷新带 SPINNER、SYNC 状态和更新时间反馈。
+- 底部三页切换：LIVE / WI-FI / HARDWARE。
+- 信号趋势图包含网格、纵轴刻度、时间轴。
+- 硬件页可选 HT8、U5 V3 八木、拉杆 GP、小环天线。
+- USB Host 设备检测（VID/PID、CDC 串口、权限状态）。
 - n41 / FREQ / PCI / RSRP / RSRQ / SINR 重点指标卡。
 - RSRP、RSRQ、SINR 三行并行实时趋势图（最近 60 个采样点）。
 - TinySA Ultra USB 串口传输接口；HT8 作为 TinySA 的下游能力，不由手机直连。
@@ -82,5 +86,6 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 4. 模拟器通常不会返回真实蜂窝小区，必须用带 SIM 的真机验证。
 
 > 本文档和代码骨架中的 WiFi/Telephony 行为均以公开 Android API 为准；不同厂商 ROM 的结果可能显著不同。
+
 
 

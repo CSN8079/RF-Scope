@@ -91,11 +91,29 @@ data class SignalSample(
     val sinr: Int?,
 )
 
+data class UsbDeviceSummary(
+    val deviceName: String,
+    val vendorId: Int,
+    val productId: Int,
+    val manufacturer: String?,
+    val product: String?,
+    val hasSerialInterface: Boolean,
+    val permissionGranted: Boolean,
+    val likelyTinySa: Boolean,
+)
+
+data class UsbScanSummary(
+    val hostSupported: Boolean = false,
+    val devices: List<UsbDeviceSummary> = emptyList(),
+)
+
 data class RfScopeUiState(
     val cellular: CellularSnapshot = CellularSnapshot(),
     val wifi: WifiScanOutcome = WifiScanOutcome(),
+    val usb: UsbScanSummary = UsbScanSummary(),
     val signalHistory: List<SignalSample> = emptyList(),
     val wifiScanInProgress: Boolean = false,
     val isRefreshing: Boolean = false,
     val lastUpdatedEpochMs: Long? = null,
 )
+

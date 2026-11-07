@@ -8,6 +8,7 @@ import com.rfscope.app.data.CellularSnapshot
 import com.rfscope.app.data.RfScopeUiState
 import com.rfscope.app.data.SignalSample
 import com.rfscope.app.data.WifiScanner
+import com.rfscope.app.hardware.UsbDeviceReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,6 +22,7 @@ import kotlinx.coroutines.withContext
 class RFScopeViewModel(application: Application) : AndroidViewModel(application) {
     private val cellReader = CellInfoReader(application)
     private val wifiScanner = WifiScanner(application)
+    private val usbReader = UsbDeviceReader(application)
 
     private val _uiState = MutableStateFlow(RfScopeUiState())
     val uiState: StateFlow<RfScopeUiState> = _uiState
@@ -82,12 +84,14 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun readCellularOnce() {
         val snapshot = withContext(Dispatchers.IO) { cellReader.read() }
+        val usb = withContext(Dispatchers.IO) { usbReader.scan() }
         val now = System.currentTimeMillis()
         appendHistory(snapshot, now)
         _uiState.update {
             it.copy(
                 cellular = snapshot,
                 signalHistory = signalHistory.toList(),
+                usb = usb,
                 lastUpdatedEpochMs = now,
             )
         }
@@ -122,3 +126,4 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         const val MAX_HISTORY_SAMPLES = 60
     }
 }
+
