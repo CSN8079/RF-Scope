@@ -1,0 +1,16 @@
+# Local Android/Gradle tooling and machine-specific paths
+.buildtools/
+.gradle/
+local.properties
+
+# Build outputs (the versioned APK is under dist/)
+build/
+app/build/
+captures/
+*.hprof
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.DS_Store

@@ -1,0 +1,21 @@
+RF-Scope APK build information
+==============================
+
+App name: RF-Scope
+Package: com.rfscope.app
+Version: 0.1.0 (versionCode 1)
+Build type: debug (installable; Android Debug certificate)
+Min SDK: 29 (Android 10)
+Target/compile SDK: 34 (Android 14)
+Built at: 2026-11-07 (Asia/Shanghai)
+APK SHA-256: e8419089daa4e0c5ccaf7728048a891a02a4c50a3661e9cac18858fd51ebe6ac
+Size: 24371795 bytes
+
+Verification:
+- apksigner: Verifies, APK Signature Scheme v2
+- aapt2: package/version/minSdk/targetSdk verified
+
+Notes:
+- Requires a real Android phone with SIM for meaningful cellular telemetry.
+- NSA/SA NR band/frequency visibility depends on modem and OEM ROM.
+- Debug certificate is not suitable for Play Store publishing.
