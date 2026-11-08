@@ -262,9 +262,9 @@ private fun HardwarePage(
     onSetTinySaToneReference: (Double) -> Unit,
     onSetThresholdEnabled: (Boolean) -> Unit,
     onSetThresholdDbm: (Double) -> Unit,
- onSetSpectrumScaleAuto: (Boolean) -> Unit,
- onSetSpectrumScaleMin: (Double) -> Unit,
- onSetSpectrumScaleMax: (Double) -> Unit,
+    onSetSpectrumScaleAuto: (Boolean) -> Unit,
+    onSetSpectrumScaleMin: (Double) -> Unit,
+    onSetSpectrumScaleMax: (Double) -> Unit,
     onToggleTinySaMarker: (Int) -> Unit,
     onSetTinySaMarkerFrequency: (Int, Long) -> Unit,
     onSetTinySaMarkerAutoPeak: (Int, Boolean) -> Unit,
@@ -273,12 +273,9 @@ private fun HardwarePage(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item { HardwarePanel(selectedAntenna) }
-        item { AntennaSelector(selectedAntenna, onAntennaSelected) }
-        item { UsbDevicePanel(usb, onRefresh, onRequestUsbPermission) }
         item {
             TinySaPanel(
                 state = tinySa,
@@ -294,19 +291,23 @@ private fun HardwarePage(
                 onSetToneReference = onSetTinySaToneReference,
                 onSetThresholdEnabled = onSetThresholdEnabled,
                 onSetThresholdDbm = onSetThresholdDbm,
- onSetSpectrumScaleAuto = onSetSpectrumScaleAuto,
- onSetSpectrumScaleMin = onSetSpectrumScaleMin,
- onSetSpectrumScaleMax = onSetSpectrumScaleMax,
+                onSetSpectrumScaleAuto = onSetSpectrumScaleAuto,
+                onSetSpectrumScaleMin = onSetSpectrumScaleMin,
+                onSetSpectrumScaleMax = onSetSpectrumScaleMax,
                 onToggleMarker = onToggleTinySaMarker,
                 onSetMarkerFrequency = onSetTinySaMarkerFrequency,
                 onSetMarkerAutoPeak = onSetTinySaMarkerAutoPeak,
                 onSetActiveMarker = onSetActiveTinySaMarker,
             )
         }
+        item { AntennaSelector(selectedAntenna, onAntennaSelected) }
+        if (tinySa.status != TinySaConnectionStatus.CONNECTED) {
+            item { UsbDevicePanel(usb, onRefresh, onRequestUsbPermission) }
+            item { HardwarePanel(selectedAntenna) }
+        }
         item { FooterNote() }
     }
 }
-
 @Composable
 private fun RfScopeTabBar(
     selected: RfScopePage,
@@ -384,15 +385,15 @@ private fun Header(lastUpdatedEpochMs: Long?, isRefreshing: Boolean) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "RF-SCOPE",
-                color = ScopeGreen,
+                color = ScopeWhite,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
             )
             Text(
-                text = "PORTABLE RF / NETWORK MONITOR  (便携式无线电与网络监测)",
-                color = ScopeMuted,
+                text = "TINYSA ULTRA SUPPORT  /  RF + NETWORK MONITOR",
+                color = ScopeCyan,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 9.sp,
                 letterSpacing = 0.5.sp,

@@ -432,6 +432,14 @@ private fun DrawScope.drawSdrSpectrum(
     val stopHz = spectrum.stopHz.toDouble()
     val spanHz = (stopHz - startHz).coerceAtLeast(1.0)
     val dbSpan = (scale.maxDbm - scale.minDbm).coerceAtLeast(1.0)
+    val sourcePowers = spectrum.powersDbm
+    val smoothedPowers = DoubleArray(sourcePowers.size) { index ->
+        val from = maxOf(0, index - 2)
+        val to = minOf(sourcePowers.lastIndex, index + 2)
+        var sum = 0.0
+        for (sample in from..to) sum += sourcePowers[sample]
+        sum / (to - from + 1)
+    }
 
     scale.ticks.forEach { tick ->
         val y = ((scale.maxDbm - tick) / dbSpan * height).toFloat().coerceIn(0f, height)
@@ -442,11 +450,11 @@ private fun DrawScope.drawSdrSpectrum(
         drawLine(ScopeGrid.copy(alpha = 0.35f), Offset(x, 0f), Offset(x, height), 1f)
     }
 
-    if (spectrum.powersDbm.size >= 2) {
+    if (smoothedPowers.size >= 2) {
         val fill = Path()
         val line = Path()
         var lastX = 0f
-        spectrum.powersDbm.forEachIndexed { index, value ->
+        smoothedPowers.forEachIndexed { index, value ->
             val frequency = spectrum.frequenciesHz.getOrNull(index) ?: spectrum.startHz.toDouble()
             val x = sdrFrequencyToX(frequency, startHz, spanHz, width)
             val y = sdrPowerToY(value, scale, dbSpan, height)
@@ -465,14 +473,14 @@ private fun DrawScope.drawSdrSpectrum(
         drawPath(fill, Color(0xFF00CFFF).copy(alpha = 0.10f))
         drawPath(line, Color(0xFF00CFFF).copy(alpha = 0.20f), style = Stroke(5f, cap = StrokeCap.Round))
 
-        for (index in 1 until spectrum.powersDbm.size) {
-            val previous = spectrum.powersDbm[index - 1]
-            val current = spectrum.powersDbm[index]
+        for (index in 1 until smoothedPowers.size) {
+            val previous = smoothedPowers[index - 1]
+            val current = smoothedPowers[index]
             val x1 = sdrFrequencyToX(spectrum.frequenciesHz.getOrNull(index - 1) ?: startHz, startHz, spanHz, width)
             val x2 = sdrFrequencyToX(spectrum.frequenciesHz.getOrNull(index) ?: stopHz, startHz, spanHz, width)
             val y1 = sdrPowerToY(previous, scale, dbSpan, height)
             val y2 = sdrPowerToY(current, scale, dbSpan, height)
-            val level = ((previous + current) / 2.0 - scale.minDbm) / dbSpan
+            val level = ((previous + current) / 2.0 + 120.0) / 100.0
             drawLine(
                 color = sdrColor(level.toFloat()),
                 start = Offset(x1, y1),
@@ -615,7 +623,10 @@ private class SdrWaterfallRenderer {
             val left = ((f0 - displayStartHz) / displaySpan * width).toFloat().coerceIn(0f, width.toFloat())
             val right = ((f1 - displayStartHz) / displaySpan * width).toFloat().coerceIn(0f, width.toFloat())
             if (right > left) {
-                val normalized = ((values[index] - SdrWaterfallScale.minDbm) / dbSpan).toFloat()
+                val leftValue = values[maxOf(0, index - 1)]
+                val rightValue = values[minOf(values.lastIndex, index + 1)]
+                val smoothedValue = (leftValue + values[index] + rightValue) / 3f
+                val normalized = ((smoothedValue - SdrWaterfallScale.minDbm) / dbSpan).toFloat()
                 paint.color = sdrColor(normalized).toArgb()
                 canvas.drawRect(left, top, right.coerceAtLeast(left + 0.65f), top + height + 0.25f, paint)
             }

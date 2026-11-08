@@ -67,7 +67,7 @@ fun TinySaPanel(
 ) {
     var showMenu by rememberSaveable { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,8 +117,8 @@ fun TinySaPanel(
             border = BorderStroke(1.dp, ScopeLine),
         ) {
             Column(
-                modifier = Modifier.padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -161,7 +161,7 @@ fun TinySaPanel(
                     onOpenMenu = { showMenu = true },
                 )
 
-                state.messageEn?.let { message ->
+                state.messageEn?.takeIf { state.status == TinySaConnectionStatus.ERROR }?.let { message ->
                     Text(
                         text = "$message  (${state.messageZh ?: ""})",
                         color = if (state.status == TinySaConnectionStatus.ERROR) ScopeRed else ScopeMuted,

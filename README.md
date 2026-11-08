@@ -164,3 +164,13 @@ Android 10+ Kotlin + Jetpack Compose RF/network monitor with TinySA Ultra USB sp
 ## License
 
 This project is released under the MIT License. See [LICENSE](LICENSE) for details.
+
+
+## v0.10.0 visual redesign
+
+- TinySA spectrum is now the first hardware-page section.
+- USB Host and antenna details move below the spectrum while connected.
+- White RF-SCOPE title and cyan TinySA Ultra support subtitle.
+- Absolute dBm color mapping and smoothing for the spectrum trace.
+- Smoother waterfall noise while keeping one row per scan.
+- Clean build: dist/RF-Scope-v0.10.0-debug.apk.

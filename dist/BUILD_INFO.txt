@@ -3,20 +3,24 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.9.3 (versionCode 12)
+Version: 0.10.0 (versionCode 13)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: 1c28e1f495ae8630e9625bbbc02c059d57c7d7b07ac3b43c8611ba7946aa967b
-Size: 24929450 bytes
+APK SHA-256: e49f7bfc2016a58bcdf6f2abd369be29ca8a4e43461eeb384f1f01f8e3962f25
+Size: 24929442 bytes
 
-Changes in 0.9.3:
-- MARKER layout now uses aligned rows, so AUTO PEAK is fully visible.
-- Menu tab highlight uses an exact-size box and no longer covers the divider.
-- CARRIER band choices include Chinese operator and band names.
-- Connection diagnostics from 0.9.2 are included: auto USB authorization, clearer failures, and red error text.
+Changes in 0.10.0:
+- Hardware page now prioritizes the TinySA spectrum view like the design preview.
+- USB Host and antenna details move below the spectrum and collapse while connected.
+- Header uses white RF-SCOPE title and cyan TinySA Ultra support subtitle.
+- Spectrum trace uses absolute dBm color mapping, so noise is blue and strong signals become green/yellow/red.
+- Spectrum trace is smoothed for a cleaner professional analyzer appearance.
+- Waterfall noise is smoothed to reduce grain while retaining one row per scan.
+- Compact spacing and hidden benign status messages keep the main screen focused.
+- Includes all 0.9.3 connection, marker, tab, carrier, RBW, and scale fixes.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.
-- Hardware behavior depends on TinySA firmware and OEM USB implementation.
+- A new physical-device screenshot will be needed after installation to update the README.
