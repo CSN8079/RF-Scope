@@ -146,6 +146,10 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun startTinySaLive() {
+        if (_uiState.value.tinySa.isPaused) {
+            resumeTinySa()
+            return
+        }
         if (_uiState.value.tinySa.isLive) return
         if (_uiState.value.tinySa.status != TinySaConnectionStatus.CONNECTED) {
             connectTinySa()
@@ -156,6 +160,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
             it.copy(
                 tinySa = it.tinySa.copy(
                     isLive = true,
+                    isPaused = false,
                     isScanning = true,
                     messageEn = "Live spectrum scanning",
                     messageZh = "实时频谱扫描中",
@@ -176,6 +181,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                     )
                 }
                 result.onSuccess { spectrum ->
+                    if (!isActive || _uiState.value.tinySa.isPaused) return@onSuccess
                     val duration = System.currentTimeMillis() - startedAt
                     val toneFrequency = SignalTonePlayer.frequencyForLevel(spectrum.peakDbm)
                     if (_uiState.value.tinySa.isToneEnabled) {
@@ -191,6 +197,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                                 waterfall = frames,
                                 isScanning = true,
                                 isLive = true,
+                                isPaused = false,
                                 lastScanDurationMs = duration,
                                 toneFrequencyHz = toneFrequency,
                                 messageEn = "Live spectrum updated",
@@ -217,6 +224,57 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun toggleTinySaPause() {
+        val current = _uiState.value.tinySa
+        if (current.isPaused) {
+            resumeTinySa()
+        } else {
+            pauseTinySa()
+        }
+    }
+
+    private fun pauseTinySa() {
+        val current = _uiState.value.tinySa
+        if (!current.isLive || current.isPaused) return
+        tinySaLiveJob?.cancel()
+        tinySaLiveJob = null
+        _uiState.update {
+            it.copy(tinySa = it.tinySa.copy(
+                isPaused = true,
+                isScanning = false,
+                messageEn = "Spectrum paused",
+                messageZh = "频谱已暂停",
+            ))
+        }
+        viewModelScope.launch {
+            delay(120)
+            withContext(Dispatchers.IO) { tinySaTransport.abort() }
+        }
+    }
+
+    private fun resumeTinySa() {
+        if (!_uiState.value.tinySa.isPaused) return
+        _uiState.update {
+            it.copy(tinySa = it.tinySa.copy(
+                isPaused = false,
+                isLive = false,
+                isScanning = false,
+                messageEn = "Resuming live spectrum...",
+                messageZh = "正在恢复实时频谱...",
+            ))
+        }
+        startTinySaLive()
+    }
+
+    fun resetMaxPeak() {
+        _uiState.update {
+            it.copy(tinySa = it.tinySa.copy(
+                maxPeakDbm = null,
+                maxPeakHz = null,
+                maxPeakAtMs = null,
+            ))
+        }
+    }
     fun stopTinySaLive() {
         tinySaLiveJob?.cancel()
         tinySaLiveJob = null
@@ -224,6 +282,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
             it.copy(
                 tinySa = it.tinySa.copy(
                     isLive = false,
+                    isPaused = false,
                     isScanning = false,
                     messageEn = "Live scan stopped",
                     messageZh = "实时扫描已停止",
@@ -279,7 +338,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                         val frames = (state.tinySa.waterfall + TinySaWaterfallRow(spectrum.capturedAtMs, FloatArray(spectrum.powersDbm.size) { spectrum.powersDbm[it].toFloat() }, startHz = spectrum.startHz, stopHz = spectrum.stopHz))
                         .takeLast(MAX_WATERFALL_FRAMES)
                     state.copy(
-                        tinySa = state.tinySa.copy(
+                        tinySa = state.tinySa.withMaxPeak(spectrum).copy(
                             status = TinySaConnectionStatus.CONNECTED,
                             spectrum = spectrum,
                             waterfall = frames,
@@ -485,6 +544,18 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         _uiState.update { it.copy(tinySa = it.tinySa.copy(dfTargetNote = note.take(80))) }
     }
 
+private fun TinySaUiState.withMaxPeak(spectrum: TinySaSpectrum): TinySaUiState {
+    val previous = maxPeakDbm
+    return if (previous == null || spectrum.peakDbm > previous) {
+        copy(
+            maxPeakDbm = spectrum.peakDbm,
+            maxPeakHz = spectrum.peakHz.toLong(),
+            maxPeakAtMs = spectrum.capturedAtMs,
+        )
+    } else {
+        this
+    }
+}
     private fun toneLevelFor(spectrum: TinySaSpectrum, state: TinySaUiState): Double {
         return when (state.toneMode) {
             TinySaToneMode.PEAK -> spectrum.peakDbm
@@ -523,7 +594,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private companion object {
-        const val POLL_INTERVAL_MS = 2_000L
+        const val POLL_INTERVAL_MS = 1_000L
         const val MIN_REFRESH_FEEDBACK_MS = 350L
         const val MAX_HISTORY_SAMPLES = 60
         const val TINYSA_DEFAULT_START_HZ = 400_000_000L

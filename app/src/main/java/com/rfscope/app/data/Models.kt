@@ -131,6 +131,8 @@ enum class TinySaAverageMode {
     OFF,
     AVER4,
     AVER16,
+    MAX_HOLD,
+    MIN_HOLD,
 }
 
 enum class TinySaToneMode {
@@ -159,6 +161,10 @@ data class TinySaUiState(
     val waterfall: List<TinySaWaterfallRow> = emptyList(),
     val isScanning: Boolean = false,
     val isLive: Boolean = false,
+    val isPaused: Boolean = false,
+    val maxPeakDbm: Double? = null,
+    val maxPeakHz: Long? = null,
+    val maxPeakAtMs: Long? = null,
     val scanStartHz: Long = 400_000_000L,
     val scanStopHz: Long = 500_000_000L,
     val scanPoints: Int = 400,

@@ -106,6 +106,8 @@ class TinySaUsbTransport(context: Context) {
                 TinySaAverageMode.OFF -> "calc off\r"
                 TinySaAverageMode.AVER4 -> "calc aver4\r"
                 TinySaAverageMode.AVER16 -> "calc aver16\r"
+                TinySaAverageMode.MAX_HOLD -> "calc max\r"
+                TinySaAverageMode.MIN_HOLD -> "calc min\r"
             })
         }
         settingsInitialized = true

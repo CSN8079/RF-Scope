@@ -49,6 +49,7 @@ fun TinySaPanel(
     onScan: () -> Unit,
     onStartLive: () -> Unit,
     onStopLive: () -> Unit,
+    onTogglePause: () -> Unit,
     onToggleTone: () -> Unit,
     onSetRange: (Long, Long, Int) -> Unit,
     onSetRbw: (Int?) -> Unit,
@@ -64,6 +65,7 @@ fun TinySaPanel(
     onSetMarkerFrequency: (Int, Long) -> Unit,
     onSetMarkerAutoPeak: (Int, Boolean) -> Unit,
     onSetActiveMarker: (Int) -> Unit,
+    onResetMaxPeak: () -> Unit,
 ) {
     var showMenu by rememberSaveable { mutableStateOf(false) }
 
@@ -154,6 +156,7 @@ fun TinySaPanel(
                     state = state,
                     onStartLive = onStartLive,
                     onStopLive = onStopLive,
+                    onTogglePause = onTogglePause,
                     onScan = onScan,
                     onToggleTone = onToggleTone,
                     onSetToneMode = onSetToneMode,
@@ -206,6 +209,7 @@ fun TinySaPanel(
             onSetMarkerFrequency = onSetMarkerFrequency,
             onSetMarkerAutoPeak = onSetMarkerAutoPeak,
             onSetActiveMarker = onSetActiveMarker,
+            onResetMaxPeak = onResetMaxPeak,
             onScan = onScan,
             onDismiss = { showMenu = false },
         )

@@ -90,6 +90,7 @@ fun RFScopeScreen(
     onScanTinySa: () -> Unit,
     onStartTinySaLive: () -> Unit,
     onStopTinySaLive: () -> Unit,
+    onToggleTinySaPause: () -> Unit,
     onToggleTinySaTone: () -> Unit,
     onSetTinySaRange: (Long, Long, Int) -> Unit,
     onSetTinySaRbw: (Int?) -> Unit,
@@ -105,6 +106,7 @@ fun RFScopeScreen(
     onSetTinySaMarkerFrequency: (Int, Long) -> Unit,
     onSetTinySaMarkerAutoPeak: (Int, Boolean) -> Unit,
     onSetActiveTinySaMarker: (Int) -> Unit,
+    onResetMaxPeak: () -> Unit,
     onRefresh: () -> Unit,
     onScanWifi: () -> Unit,
     onOpenAppSettings: () -> Unit,
@@ -153,6 +155,7 @@ fun RFScopeScreen(
                     onScanTinySa = onScanTinySa,
                     onStartTinySaLive = onStartTinySaLive,
                     onStopTinySaLive = onStopTinySaLive,
+                    onToggleTinySaPause = onToggleTinySaPause,
                     onToggleTinySaTone = onToggleTinySaTone,
                     onSetTinySaRange = onSetTinySaRange,
                     onSetTinySaRbw = onSetTinySaRbw,
@@ -168,6 +171,7 @@ fun RFScopeScreen(
                     onSetTinySaMarkerFrequency = onSetTinySaMarkerFrequency,
                     onSetTinySaMarkerAutoPeak = onSetTinySaMarkerAutoPeak,
                     onSetActiveTinySaMarker = onSetActiveTinySaMarker,
+                    onResetMaxPeak = onResetMaxPeak,
                     onRefresh = onRefresh,
                 )
             }
@@ -254,6 +258,7 @@ private fun HardwarePage(
     onScanTinySa: () -> Unit,
     onStartTinySaLive: () -> Unit,
     onStopTinySaLive: () -> Unit,
+    onToggleTinySaPause: () -> Unit,
     onToggleTinySaTone: () -> Unit,
     onSetTinySaRange: (Long, Long, Int) -> Unit,
     onSetTinySaRbw: (Int?) -> Unit,
@@ -269,6 +274,7 @@ private fun HardwarePage(
     onSetTinySaMarkerFrequency: (Int, Long) -> Unit,
     onSetTinySaMarkerAutoPeak: (Int, Boolean) -> Unit,
     onSetActiveTinySaMarker: (Int) -> Unit,
+    onResetMaxPeak: () -> Unit,
     onRefresh: () -> Unit,
 ) {
     LazyColumn(
@@ -283,6 +289,7 @@ private fun HardwarePage(
                 onScan = onScanTinySa,
                 onStartLive = onStartTinySaLive,
                 onStopLive = onStopTinySaLive,
+                onTogglePause = onToggleTinySaPause,
                 onToggleTone = onToggleTinySaTone,
                 onSetRange = onSetTinySaRange,
                 onSetRbw = onSetTinySaRbw,
@@ -298,6 +305,7 @@ private fun HardwarePage(
                 onSetMarkerFrequency = onSetTinySaMarkerFrequency,
                 onSetMarkerAutoPeak = onSetTinySaMarkerAutoPeak,
                 onSetActiveMarker = onSetActiveTinySaMarker,
+                onResetMaxPeak = onResetMaxPeak,
             )
         }
         item { AntennaSelector(selectedAntenna, onAntennaSelected) }
@@ -1454,6 +1462,7 @@ private fun RFScopePreview() {
             onScanTinySa = {},
             onStartTinySaLive = {},
             onStopTinySaLive = {},
+            onToggleTinySaPause = {},
             onToggleTinySaTone = {},
             onSetTinySaRange = { _, _, _ -> },
             onSetTinySaRbw = {},
@@ -1469,6 +1478,7 @@ private fun RFScopePreview() {
             onSetTinySaMarkerFrequency = { _, _ -> },
             onSetTinySaMarkerAutoPeak = { _, _ -> },
             onSetActiveTinySaMarker = {},
+            onResetMaxPeak = {},
             onRefresh = {},
             onScanWifi = {},
             onOpenAppSettings = {},

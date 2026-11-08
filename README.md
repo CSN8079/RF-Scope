@@ -174,3 +174,13 @@ This project is released under the MIT License. See [LICENSE](LICENSE) for detai
 - Absolute dBm color mapping and smoothing for the spectrum trace.
 - Smoother waterfall noise while keeping one row per scan.
 - Clean build: dist/RF-Scope-v0.10.0-debug.apk.
+
+
+## v0.10.1 pause, CALC and MAX EVER
+
+- PAUSE/RESUME freezes live spectrum and waterfall updates.
+- CALC / VBW adds MAX HOLD and MIN HOLD via TinySA calc max/min.
+- MAX EVER tracks the strongest signal and marks it on spectrum and waterfall.
+- MARKER tab shows MAX EVER with a RESET MAX button.
+- Live cellular polling interval reduced to one second.
+- Clean build: dist/RF-Scope-v0.10.1-debug.apk.

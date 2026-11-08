@@ -97,6 +97,7 @@ fun TinySaMainControls(
     onStartLive: () -> Unit,
     onStopLive: () -> Unit,
     onScan: () -> Unit,
+    onTogglePause: () -> Unit,
     onToggleTone: () -> Unit,
     onSetToneMode: (TinySaToneMode) -> Unit,
     onSetToneReference: (Double) -> Unit,
@@ -120,6 +121,14 @@ fun TinySaMainControls(
                 enabled = !state.isLive,
                 modifier = Modifier.weight(1f),
                 onClick = onScan,
+            )
+            MiniActionButton(
+                label = if (state.isPaused) "RESUME" else "PAUSE",
+                active = state.isPaused,
+                activeColor = ScopeAmber,
+                enabled = state.isLive || state.isPaused,
+                modifier = Modifier.weight(1f),
+                onClick = onTogglePause,
             )
             MiniActionButton(
                 label = "TONE",
@@ -266,6 +275,8 @@ fun TinySaSdrDisplay(state: TinySaUiState) {
                     thresholdDbm = state.thresholdDbm,
                     markers = state.markers,
                     activeMarkerId = state.activeMarkerId,
+                    maxPeakDbm = state.maxPeakDbm,
+                    maxPeakHz = state.maxPeakHz,
                 )
             }
         }
@@ -298,6 +309,7 @@ fun TinySaSdrDisplay(state: TinySaUiState) {
                     displayStartHz = spectrum.startHz,
                     displayStopHz = spectrum.stopHz,
                     renderer = waterfallRenderer,
+                    maxPeakHz = state.maxPeakHz,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight(),
@@ -386,6 +398,7 @@ private fun SdrWaterfallPlot(
     displayStartHz: Long,
     displayStopHz: Long,
     renderer: SdrWaterfallRenderer,
+    maxPeakHz: Long?,
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier.background(ScopeBlack)) {
@@ -393,6 +406,10 @@ private fun SdrWaterfallPlot(
         val heightPx = size.height.roundToInt().coerceAtLeast(1)
         renderer.render(frames, displayStartHz, displayStopHz, widthPx, heightPx)?.let { image ->
             drawImage(image)
+        }
+        maxPeakHz?.takeIf { it in displayStartHz..displayStopHz }?.let { peakHz ->
+            val x = ((peakHz - displayStartHz).toDouble() / (displayStopHz - displayStartHz).coerceAtLeast(1L) * size.width).toFloat()
+            drawLine(ScopeAmber.copy(alpha = 0.9f), Offset(x, 0f), Offset(x, size.height), 1.4f)
         }
     }
 }
@@ -425,6 +442,8 @@ private fun DrawScope.drawSdrSpectrum(
     thresholdDbm: Double,
     markers: List<TinySaMarker>,
     activeMarkerId: Int,
+    maxPeakDbm: Double?,
+    maxPeakHz: Long?,
 ) {
     val width = size.width
     val height = size.height
@@ -512,6 +531,13 @@ private fun DrawScope.drawSdrSpectrum(
         drawCircle(color, radius = 2.5f, center = Offset(x, 4f))
     }
 
+    if (maxPeakDbm != null && maxPeakHz != null && maxPeakHz in spectrum.startHz..spectrum.stopHz) {
+        val maxX = sdrFrequencyToX(maxPeakHz.toDouble(), startHz, spanHz, width)
+        val maxY = sdrPowerToY(maxPeakDbm, scale, dbSpan, height)
+        drawLine(ScopeAmber.copy(alpha = 0.7f), Offset(maxX, 0f), Offset(maxX, height), 1.2f)
+        drawCircle(ScopeAmber, radius = 4.2f, center = Offset(maxX, maxY))
+        drawCircle(Color.White.copy(alpha = 0.7f), radius = 1.5f, center = Offset(maxX, maxY))
+    }
     val peakX = sdrFrequencyToX(spectrum.peakHz, startHz, spanHz, width)
     val peakY = sdrPowerToY(spectrum.peakDbm, scale, dbSpan, height)
     drawCircle(ScopeRed.copy(alpha = 0.22f), radius = 7f, center = Offset(peakX, peakY))
@@ -760,6 +786,7 @@ fun TinySaMenuDialogV2(
     onSetMarkerFrequency: (Int, Long) -> Unit,
     onSetMarkerAutoPeak: (Int, Boolean) -> Unit,
     onSetActiveMarker: (Int) -> Unit,
+    onResetMaxPeak: () -> Unit,
     onScan: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -860,6 +887,7 @@ fun TinySaMenuDialogV2(
                         onSetMarkerFrequency = onSetMarkerFrequency,
                         onSetMarkerAutoPeak = onSetMarkerAutoPeak,
                         onSetActiveMarker = onSetActiveMarker,
+                        onResetMaxPeak = onResetMaxPeak,
                     )
                     3 -> MeasureMenuContent(
                         state = state,
@@ -1021,15 +1049,17 @@ private fun LevelMenuContent(
                 )
             }
         }
-        Text("VBW / AVG", color = ScopeMuted, fontSize = 8.sp)
+        Text("CALC / VBW  (max/min hold)", color = ScopeMuted, fontSize = 8.sp)
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             MiniActionButton("OFF", active = state.averageMode == TinySaAverageMode.OFF, modifier = Modifier.width(52.dp), onClick = { onSetAverage(TinySaAverageMode.OFF) })
-            MiniActionButton("4x", active = state.averageMode == TinySaAverageMode.AVER4, modifier = Modifier.width(52.dp), onClick = { onSetAverage(TinySaAverageMode.AVER4) })
-            MiniActionButton("16x", active = state.averageMode == TinySaAverageMode.AVER16, modifier = Modifier.width(52.dp), onClick = { onSetAverage(TinySaAverageMode.AVER16) })
+            MiniActionButton("AVG4", active = state.averageMode == TinySaAverageMode.AVER4, modifier = Modifier.width(58.dp), onClick = { onSetAverage(TinySaAverageMode.AVER4) })
+            MiniActionButton("AVG16", active = state.averageMode == TinySaAverageMode.AVER16, modifier = Modifier.width(62.dp), onClick = { onSetAverage(TinySaAverageMode.AVER16) })
+            MiniActionButton("MAX HOLD", active = state.averageMode == TinySaAverageMode.MAX_HOLD, activeColor = ScopeAmber, modifier = Modifier.width(78.dp), onClick = { onSetAverage(TinySaAverageMode.MAX_HOLD) })
+            MiniActionButton("MIN HOLD", active = state.averageMode == TinySaAverageMode.MIN_HOLD, activeColor = ScopeCyan, modifier = Modifier.width(78.dp), onClick = { onSetAverage(TinySaAverageMode.MIN_HOLD) })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             MiniActionButton(
@@ -1058,6 +1088,7 @@ private fun MarkerMenuContent(
     onSetMarkerFrequency: (Int, Long) -> Unit,
     onSetMarkerAutoPeak: (Int, Boolean) -> Unit,
     onSetActiveMarker: (Int) -> Unit,
+    onResetMaxPeak: () -> Unit,
 ) {
     val active = state.markers.firstOrNull { it.id == state.activeMarkerId }
     var markerText by rememberSaveable { mutableStateOf(sdrFormatMhzValue(active?.frequencyHz ?: state.scanStartHz)) }
@@ -1065,6 +1096,38 @@ private fun MarkerMenuContent(
         markerText = sdrFormatMhzValue(active?.frequencyHz ?: state.scanStartHz)
     }
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text("MAX EVER  (\u5386\u53f2\u6700\u5f3a\u4fe1\u53f7)", color = ScopeAmber, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (state.maxPeakDbm != null && state.maxPeakHz != null) {
+                        "${String.format(Locale.US, "%.1f", state.maxPeakDbm)} dBm  @  ${sdrFormatHz(state.maxPeakHz)}"
+                    } else {
+                        "Waiting for scan..."
+                    },
+                    color = if (state.maxPeakDbm != null) ScopeGreen else ScopeMuted,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            MiniActionButton(
+                label = "RESET MAX",
+                active = state.maxPeakDbm != null,
+                activeColor = ScopeRed,
+                onClick = onResetMaxPeak,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(ScopeLine),
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
