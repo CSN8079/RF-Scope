@@ -1,6 +1,8 @@
 # RF-Scope - TinySA Ultra Spectrum & RF Monitor
 
-![RF-Scope TinySA Ultra UI](docs/screenshots/rf-scope-tinysa.png)
+![RF-Scope TinySA Ultra on a Xiaomi phone](docs/screenshots/rf-scope-device.jpg)
+
+*Actual device screenshot: Xiaomi phone connected to TinySA Ultra.*
 
 Android 10+ Kotlin + Jetpack Compose RF/network monitor with TinySA Ultra USB spectrum analyzer support.
 
