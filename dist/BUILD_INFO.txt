@@ -3,21 +3,23 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.4.0 (versionCode 4)
+Version: 0.5.0 (versionCode 5)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: c75369e80e8fd11bac3645bd83323657f5c4ce15ee3d4933887db3838cc4e74d
-Size: 24535643 bytes
+APK SHA-256: f3a2f9a67d3c508281695d642ec94d82b8ae93b2bfc7bccc173c0cef761d18cd
+Size: 24634538 bytes
 
-Changes in 0.4.0:
-- Explicit TinySA identification for VID 0x0483 / PID 0x5740.
-- USB permission request button for the detected CDC device.
-- USB permission result refresh.
-- Hardware page reports CDC serial and permission state.
+Changes in 0.5.0:
+- USB_DEVICE_ATTACHED filter for STM32 CDC VID 0x0483 / PID 0x5740.
+- TinySA USB CDC serial transport and scanraw parser.
+- 400-500 MHz / 200 point test spectrum with peak, noise floor and SNR.
+- Wi-Fi 2.4/5/6 GHz channel occupancy charts.
+- More visible WiFi row separators and chart grid lines.
+- Relative time ticks in signal trend charts; missing samples break lines.
+- Live header clock updates every second, with LAST update time.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.
-- TinySA serial protocol driver is still pending; USB permission is now requestable.
-- NSA/SA NR band/frequency visibility depends on modem and OEM ROM.
+- Test spectrum range is currently fixed at 400-500 MHz.

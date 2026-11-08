@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -32,7 +33,9 @@ class MainActivity : ComponentActivity() {
     private val usbPermissionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == ACTION_USB_PERMISSION) {
+                val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
                 viewModel.refresh()
+                if (granted) viewModel.connectTinySa()
             }
         }
     }
@@ -57,6 +60,8 @@ class MainActivity : ComponentActivity() {
                         requestPermissions(wifiPermissions())
                     },
                     onRequestUsbPermission = ::requestUsbPermission,
+                    onConnectTinySa = viewModel::connectTinySa,
+                    onScanTinySa = viewModel::scanTinySa,
                     onRefresh = viewModel::refresh,
                     onScanWifi = viewModel::scanWifi,
                     onOpenAppSettings = ::openAppSettings,
@@ -65,8 +70,22 @@ class MainActivity : ComponentActivity() {
             }
         }
         window.decorView.post { requestInitialPermissions() }
+        if (intent?.action == UsbManager.ACTION_USB_DEVICE_ATTACHED) {
+            window.decorView.post {
+                viewModel.refresh()
+                viewModel.connectTinySa()
+            }
+        }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action == UsbManager.ACTION_USB_DEVICE_ATTACHED) {
+            viewModel.refresh()
+            viewModel.connectTinySa()
+        }
+    }
     override fun onDestroy() {
         runCatching { unregisterReceiver(usbPermissionReceiver) }
         super.onDestroy()
@@ -75,15 +94,12 @@ class MainActivity : ComponentActivity() {
     private fun requestInitialPermissions() {
         val preferences = getSharedPreferences(PERMISSION_PREFERENCES, MODE_PRIVATE)
         if (preferences.getBoolean(KEY_INITIAL_PERMISSION_ASKED, false)) return
-
         preferences.edit().putBoolean(KEY_INITIAL_PERMISSION_ASKED, true).apply()
         requestPermissions(allPermissions())
     }
 
     private fun requestPermissions(permissions: List<String>) {
-        val missing = permissions
-            .distinct()
-            .filterNot(::isGranted)
+        val missing = permissions.distinct().filterNot(::isGranted)
         if (missing.isEmpty()) {
             viewModel.onPermissionsChanged()
             return
@@ -145,3 +161,4 @@ class MainActivity : ComponentActivity() {
         const val ACTION_USB_PERMISSION = "com.rfscope.app.USB_PERMISSION"
     }
 }
+

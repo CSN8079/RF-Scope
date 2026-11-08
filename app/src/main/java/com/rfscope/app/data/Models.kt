@@ -107,13 +107,43 @@ data class UsbScanSummary(
     val devices: List<UsbDeviceSummary> = emptyList(),
 )
 
+enum class TinySaConnectionStatus {
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED,
+    ERROR,
+}
+
+data class TinySaSpectrum(
+    val startHz: Long,
+    val stopHz: Long,
+    val points: Int,
+    val frequenciesHz: DoubleArray,
+    val powersDbm: DoubleArray,
+    val peakIndex: Int,
+    val peakHz: Double,
+    val peakDbm: Double,
+    val noiseFloorDbm: Double,
+    val capturedAtMs: Long,
+)
+
+data class TinySaUiState(
+    val status: TinySaConnectionStatus = TinySaConnectionStatus.DISCONNECTED,
+    val spectrum: TinySaSpectrum? = null,
+    val isScanning: Boolean = false,
+    val messageEn: String? = null,
+    val messageZh: String? = null,
+)
+
 data class RfScopeUiState(
     val cellular: CellularSnapshot = CellularSnapshot(),
     val wifi: WifiScanOutcome = WifiScanOutcome(),
     val usb: UsbScanSummary = UsbScanSummary(),
+    val tinySa: TinySaUiState = TinySaUiState(),
     val signalHistory: List<SignalSample> = emptyList(),
     val wifiScanInProgress: Boolean = false,
     val isRefreshing: Boolean = false,
     val lastUpdatedEpochMs: Long? = null,
 )
+
 

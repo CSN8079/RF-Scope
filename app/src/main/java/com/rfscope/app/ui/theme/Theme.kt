@@ -20,6 +20,7 @@ val ScopeWhite = Color(0xFFF2F2F2)
 val ScopeMuted = Color(0xFF8A9490)
 val ScopePanel = Color(0xFF0B0F10)
 val ScopeLine = Color(0xFF1D2724)
+val ScopeGrid = Color(0xFF43524C)
 
 private val ScopeColors = darkColorScheme(
     primary = ScopeGreen,
@@ -58,4 +59,5 @@ fun RFScopeTheme(content: @Composable () -> Unit) {
         content = content,
     )
 }
+
 

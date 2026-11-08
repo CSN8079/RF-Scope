@@ -2,6 +2,7 @@ package com.rfscope.app.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -56,12 +57,15 @@ import com.rfscope.app.data.SignalSample
 import com.rfscope.app.data.WifiNetwork
 import com.rfscope.app.data.WifiScanOutcome
 import com.rfscope.app.data.WifiScanStatus
+import com.rfscope.app.data.TinySaConnectionStatus
+import com.rfscope.app.data.TinySaUiState
 import com.rfscope.app.ui.theme.RFScopeTheme
 import com.rfscope.app.ui.theme.ScopeAmber
 import com.rfscope.app.ui.theme.ScopeBlack
 import com.rfscope.app.ui.theme.ScopeCyan
 import com.rfscope.app.ui.theme.ScopeGreen
 import com.rfscope.app.ui.theme.ScopeGreenDim
+import com.rfscope.app.ui.theme.ScopeGrid
 import com.rfscope.app.ui.theme.ScopeLine
 import com.rfscope.app.ui.theme.ScopeMuted
 import com.rfscope.app.ui.theme.ScopePanel
@@ -72,6 +76,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 @Composable
 fun RFScopeScreen(
@@ -79,6 +84,8 @@ fun RFScopeScreen(
     onRequestCellularPermissions: () -> Unit,
     onRequestWifiPermissions: () -> Unit,
     onRequestUsbPermission: () -> Unit,
+    onConnectTinySa: () -> Unit,
+    onScanTinySa: () -> Unit,
     onRefresh: () -> Unit,
     onScanWifi: () -> Unit,
     onOpenAppSettings: () -> Unit,
@@ -119,9 +126,12 @@ fun RFScopeScreen(
 
                 RfScopePage.HARDWARE -> HardwarePage(
                     usb = state.usb,
+                    tinySa = state.tinySa,
                     selectedAntenna = selectedAntenna,
                     onAntennaSelected = { antennaName = it.name },
                     onRequestUsbPermission = onRequestUsbPermission,
+                    onConnectTinySa = onConnectTinySa,
+                    onScanTinySa = onScanTinySa,
                     onRefresh = onRefresh,
                 )
             }
@@ -200,9 +210,12 @@ private fun WifiPage(
 @Composable
 private fun HardwarePage(
     usb: UsbScanSummary,
+    tinySa: TinySaUiState,
     selectedAntenna: AntennaType,
     onAntennaSelected: (AntennaType) -> Unit,
     onRequestUsbPermission: () -> Unit,
+    onConnectTinySa: () -> Unit,
+    onScanTinySa: () -> Unit,
     onRefresh: () -> Unit,
 ) {
     LazyColumn(
@@ -213,6 +226,7 @@ private fun HardwarePage(
         item { HardwarePanel(selectedAntenna) }
         item { AntennaSelector(selectedAntenna, onAntennaSelected) }
         item { UsbDevicePanel(usb, onRefresh, onRequestUsbPermission) }
+        item { TinySaPanel(tinySa, onConnectTinySa, onScanTinySa) }
         item { FooterNote() }
     }
 }
@@ -280,6 +294,12 @@ private fun PageTab(
 }
 @Composable
 private fun Header(lastUpdatedEpochMs: Long?, isRefreshing: Boolean) {
+    val clock by produceState(initialValue = formatTime(System.currentTimeMillis())) {
+        while (true) {
+            value = formatTime(System.currentTimeMillis())
+            delay(1_000)
+        }
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -320,10 +340,16 @@ private fun Header(lastUpdatedEpochMs: Long?, isRefreshing: Boolean) {
                 )
             }
             Text(
-                text = lastUpdatedEpochMs?.let(::formatTime) ?: "--:--:--",
+                text = clock,
+                color = ScopeGreenDim,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 11.sp,
+            )
+            Text(
+                text = "LAST ${lastUpdatedEpochMs?.let(::formatTime) ?: "--:--:--"}",
                 color = ScopeMuted,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 10.sp,
+                fontSize = 8.sp,
             )
         }
     }
@@ -759,10 +785,28 @@ private fun WifiPanel(
                         fontFamily = FontFamily.Monospace,
                         fontSize = 9.sp,
                     )
+                    val visibleNetworks = outcome.networks.take(12)
+                    WifiChannelChart(outcome.networks, "2.4 GHz")
+                    WifiChannelChart(outcome.networks, "5 GHz")
+                    WifiChannelChart(outcome.networks, "6 GHz")
                     ScopeCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                            outcome.networks.take(12).forEach { network ->
-                                WifiRow(network)
+                        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                            visibleNetworks.forEachIndexed { index, network ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 5.dp),
+                                ) {
+                                    WifiRow(network)
+                                }
+                                if (index < visibleNetworks.lastIndex) {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(1.dp)
+                                            .background(ScopeGrid.copy(alpha = 0.82f)),
+                                    )
+                                }
                             }
                             if (outcome.networks.size > 12) {
                                 Text(
@@ -860,7 +904,7 @@ private fun HardwarePanel(selectedAntenna: AntennaType) {
                     fontSize = 9.sp,
                 )
                 Text(
-                    text = "USB HOST (OTG): INTERFACE READY / SERIAL DRIVER PENDING  (接口已预留，串口驱动待实现)",
+                    text = "USB HOST (OTG): CDC SERIAL READY  (CDC 串口驱动已接入)",
                     color = ScopeMuted,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 9.sp,
@@ -1000,7 +1044,7 @@ private fun UsbDevicePanel(
                     }
                 }
                 Text(
-                    text = "DETECTION ONLY / SERIAL DRIVER PENDING  (目前只检测 USB 设备，串口驱动待实现)",
+                    text = "USB DETECTION + TINYSA SERIAL  (USB 检测与 TinySA 串口已接入)",
                     color = ScopeMuted,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 9.sp,
@@ -1295,6 +1339,8 @@ private fun RFScopePreview() {
             onRequestCellularPermissions = {},
             onRequestWifiPermissions = {},
             onRequestUsbPermission = {},
+            onConnectTinySa = {},
+            onScanTinySa = {},
             onRefresh = {},
             onScanWifi = {},
             onOpenAppSettings = {},
@@ -1302,6 +1348,9 @@ private fun RFScopePreview() {
         )
     }
 }
+
+
+
 
 
 

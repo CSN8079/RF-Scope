@@ -3,6 +3,7 @@ package com.rfscope.app.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
@@ -30,20 +30,15 @@ import com.rfscope.app.data.SignalSample
 import com.rfscope.app.ui.theme.ScopeAmber
 import com.rfscope.app.ui.theme.ScopeCyan
 import com.rfscope.app.ui.theme.ScopeGreen
+import com.rfscope.app.ui.theme.ScopeGrid
 import com.rfscope.app.ui.theme.ScopeLine
 import com.rfscope.app.ui.theme.ScopeMuted
 import com.rfscope.app.ui.theme.ScopePanel
 import com.rfscope.app.ui.theme.ScopeWhite
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import kotlin.math.roundToLong
 
 @Composable
 fun SignalTrendCard(history: List<SignalSample>) {
-    val rsrpValues = history.mapNotNull { it.rsrp?.toFloat() }
-    val rsrqValues = history.mapNotNull { it.rsrq?.toFloat() }
-    val sinrValues = history.mapNotNull { it.sinr?.toFloat() }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(4.dp),
@@ -69,7 +64,7 @@ fun SignalTrendCard(history: List<SignalSample>) {
                         letterSpacing = 1.3.sp,
                     )
                     Text(
-                        text = "(信号趋势)  3 LINES IN PARALLEL",
+                        text = "(信号趋势)  MEASURED SAMPLES ONLY",
                         color = ScopeMuted,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 9.sp,
@@ -85,7 +80,7 @@ fun SignalTrendCard(history: List<SignalSample>) {
 
             if (history.isEmpty()) {
                 Text(
-                    text = "WAITING FOR SIGNAL SAMPLES  (等待信号采样)",
+                    text = "WAITING FOR MEASURED DATA  (等待测量数据)",
                     color = ScopeMuted,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
@@ -94,55 +89,34 @@ fun SignalTrendCard(history: List<SignalSample>) {
                 SparkRow(
                     label = "RSRP",
                     zh = "参考信号接收功率",
-                    values = rsrpValues,
+                    values = history.map { it.rsrp?.toFloat() },
                     range = -140f..-40f,
                     current = history.lastOrNull { it.rsrp != null }?.rsrp,
                     unit = "dBm",
                     color = ScopeGreen,
+                    sampleCount = history.size,
                 )
                 SparkRow(
                     label = "RSRQ",
                     zh = "参考信号接收质量",
-                    values = rsrqValues,
+                    values = history.map { it.rsrq?.toFloat() },
                     range = -20f..0f,
                     current = history.lastOrNull { it.rsrq != null }?.rsrq,
                     unit = "dB",
                     color = ScopeAmber,
+                    sampleCount = history.size,
                 )
                 SparkRow(
                     label = "SINR",
                     zh = "信噪比",
-                    values = sinrValues,
+                    values = history.map { it.sinr?.toFloat() },
                     range = -20f..30f,
                     current = history.lastOrNull { it.sinr != null }?.sinr,
                     unit = "dB",
                     color = ScopeCyan,
+                    sampleCount = history.size,
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 42.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = formatTrendTime(history.firstOrNull()?.timestampMs),
-                        color = ScopeMuted,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 8.sp,
-                    )
-                    Text(
-                        text = "TIME  (时间)",
-                        color = ScopeMuted,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 8.sp,
-                    )
-                    Text(
-                        text = formatTrendTime(history.lastOrNull()?.timestampMs),
-                        color = ScopeMuted,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 8.sp,
-                    )
-                }
+                TimeAxis(history)
             }
         }
     }
@@ -152,12 +126,14 @@ fun SignalTrendCard(history: List<SignalSample>) {
 private fun SparkRow(
     label: String,
     zh: String,
-    values: List<Float>,
+    values: List<Float?>,
     range: ClosedFloatingPointRange<Float>,
     current: Int?,
     unit: String,
     color: Color,
+    sampleCount: Int,
 ) {
+    val validCount = values.count { it != null }
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -213,52 +189,107 @@ private fun SparkRow(
                 for (index in 0..4) {
                     val y = size.height * index / 4f
                     drawLine(
-                        color = ScopeLine,
+                        color = ScopeGrid,
                         start = Offset(0f, y),
                         end = Offset(size.width, y),
-                        strokeWidth = 1f,
+                        strokeWidth = 1.2f,
                     )
                 }
                 for (index in 0..4) {
                     val x = size.width * index / 4f
                     drawLine(
-                        color = ScopeLine.copy(alpha = 0.65f),
+                        color = ScopeGrid.copy(alpha = 0.55f),
                         start = Offset(x, 0f),
                         end = Offset(x, size.height),
-                        strokeWidth = 1f,
+                        strokeWidth = 1.2f,
                     )
                 }
-                if (values.size >= 2) {
-                    val path = Path()
+
+                if (validCount > 0) {
+                    var previous: Offset? = null
                     values.forEachIndexed { index, value ->
-                        val x = index / (values.size - 1f) * size.width
+                        if (value == null) {
+                            previous = null
+                            return@forEachIndexed
+                        }
+                        val x = if (sampleCount <= 1) {
+                            size.width / 2f
+                        } else {
+                            index / (sampleCount - 1f) * size.width
+                        }
                         val normalized = ((value - range.start) / (range.endInclusive - range.start))
                             .coerceIn(0f, 1f)
-                        val y = size.height - normalized * size.height
-                        if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        val point = Offset(x, size.height - normalized * size.height)
+                        if (previous == null) {
+                            drawCircle(color = color, radius = 2.4f, center = point)
+                        } else {
+                            drawLine(
+                                color = color,
+                                start = previous!!,
+                                end = point,
+                                strokeWidth = 2f,
+                                cap = StrokeCap.Round,
+                            )
+                        }
+                        previous = point
                     }
-                    drawPath(
-                        path = path,
-                        color = color,
-                        style = Stroke(width = 2f, cap = StrokeCap.Round),
-                    )
-                } else if (values.size == 1) {
-                    drawCircle(
-                        color = color,
-                        radius = 3f,
-                        center = Offset(size.width / 2f, size.height / 2f),
-                    )
                 }
             }
         }
+        if (validCount == 0) {
+            Text(
+                text = "NO MEASURED DATA  (无测量数据)",
+                color = ScopeMuted,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 8.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimeAxis(history: List<SignalSample>) {
+    val first = history.firstOrNull()?.timestampMs ?: return
+    val last = history.lastOrNull()?.timestampMs ?: return
+    val spanMs = (last - first).coerceAtLeast(0L)
+    val labels = listOf(0.0, 0.25, 0.5, 0.75, 1.0).map { fraction ->
+        relativeTimeLabel((spanMs * (1.0 - fraction)).roundToLong())
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 42.dp, top = 1.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        labels.forEach { label ->
+            Text(
+                text = label,
+                color = ScopeMuted,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 8.sp,
+            )
+        }
+    }
+    Box(Modifier.fillMaxWidth()) {
+        Text(
+            text = "TIME  (时间)",
+            color = ScopeMuted,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 8.sp,
+            modifier = Modifier.align(Alignment.Center),
+        )
     }
 }
 
 private fun axisLabel(value: Float): String = value.toInt().toString()
 
-private fun formatTrendTime(epochMs: Long?): String {
-    if (epochMs == null) return "--:--"
-    return Instant.ofEpochMilli(epochMs)
-        .atZone(ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+private fun relativeTimeLabel(deltaMs: Long): String {
+    val seconds = (deltaMs / 1000.0).roundToLong().coerceAtLeast(0)
+    return when {
+        seconds == 0L -> "0s"
+        seconds < 60 -> "-${seconds}s"
+        seconds % 60L == 0L -> "-${seconds / 60L}m"
+        else -> "-${seconds / 60L}m${seconds % 60L}s"
+    }
 }
+

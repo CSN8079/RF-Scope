@@ -8,7 +8,9 @@ import com.rfscope.app.data.CellInfoReader
 import com.rfscope.app.data.CellularSnapshot
 import com.rfscope.app.data.RfScopeUiState
 import com.rfscope.app.data.SignalSample
+import com.rfscope.app.data.TinySaConnectionStatus
 import com.rfscope.app.data.WifiScanner
+import com.rfscope.app.hardware.TinySaUsbTransport
 import com.rfscope.app.hardware.UsbDeviceReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,6 +26,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
     private val cellReader = CellInfoReader(application)
     private val wifiScanner = WifiScanner(application)
     private val usbReader = UsbDeviceReader(application)
+    private val tinySaTransport = TinySaUsbTransport(application)
 
     private val _uiState = MutableStateFlow(RfScopeUiState())
     val uiState: StateFlow<RfScopeUiState> = _uiState
@@ -36,10 +39,6 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         startPolling()
     }
 
-    /**
-     * Foreground polling is intentional for the skeleton. Before release, gate
-     * this loop with repeatOnLifecycle(STARTED) or a foreground service.
-     */
     private fun startPolling() {
         pollJob?.cancel()
         pollJob = viewModelScope.launch {
@@ -50,7 +49,6 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    /** Manual refresh has a visible spinner and a small minimum display time. */
     fun refresh() {
         if (refreshJob?.isActive == true) return
         _uiState.update { it.copy(isRefreshing = true) }
@@ -71,6 +69,92 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
 
     fun requestUsbPermission(pendingIntent: PendingIntent): Boolean =
         usbReader.requestPermissionForLikelyTinySa(pendingIntent)
+
+    fun connectTinySa() {
+        if (_uiState.value.tinySa.isScanning ||
+            _uiState.value.tinySa.status == TinySaConnectionStatus.CONNECTING
+        ) return
+
+        _uiState.update {
+            it.copy(
+                tinySa = it.tinySa.copy(
+                    status = TinySaConnectionStatus.CONNECTING,
+                    messageEn = "Opening TinySA CDC serial port...",
+                    messageZh = "正在打开 TinySA CDC 串口...",
+                ),
+            )
+        }
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { tinySaTransport.connect() }
+            result.onSuccess {
+                _uiState.update {
+                    it.copy(
+                        tinySa = it.tinySa.copy(
+                            status = TinySaConnectionStatus.CONNECTED,
+                            messageEn = "TinySA connected",
+                            messageZh = "TinySA 已连接",
+                        ),
+                    )
+                }
+                scanTinySa()
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        tinySa = it.tinySa.copy(
+                            status = TinySaConnectionStatus.ERROR,
+                            messageEn = error.message ?: "TinySA connection failed",
+                            messageZh = "TinySA 连接失败",
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    fun scanTinySa() {
+        if (_uiState.value.tinySa.isScanning) return
+        if (_uiState.value.tinySa.status != TinySaConnectionStatus.CONNECTED) {
+            connectTinySa()
+            return
+        }
+
+        _uiState.update {
+            it.copy(tinySa = it.tinySa.copy(isScanning = true))
+        }
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                tinySaTransport.scan(
+                    startHz = TINYSA_DEFAULT_START_HZ,
+                    stopHz = TINYSA_DEFAULT_STOP_HZ,
+                    points = TINYSA_DEFAULT_POINTS,
+                )
+            }
+            result.onSuccess { spectrum ->
+                _uiState.update {
+                    it.copy(
+                        tinySa = it.tinySa.copy(
+                            status = TinySaConnectionStatus.CONNECTED,
+                            spectrum = spectrum,
+                            isScanning = false,
+                            messageEn = "Spectrum received",
+                            messageZh = "频谱数据已读取",
+                        ),
+                    )
+                }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        tinySa = it.tinySa.copy(
+                            status = TinySaConnectionStatus.ERROR,
+                            isScanning = false,
+                            messageEn = error.message ?: "TinySA scan failed",
+                            messageZh = "TinySA 扫描失败",
+                        ),
+                    )
+                }
+            }
+        }
+    }
 
     fun scanWifi() {
         if (_uiState.value.wifiScanInProgress) return
@@ -121,6 +205,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
     override fun onCleared() {
         pollJob?.cancel()
         refreshJob?.cancel()
+        tinySaTransport.disconnect()
         super.onCleared()
     }
 
@@ -128,7 +213,8 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         const val POLL_INTERVAL_MS = 2_000L
         const val MIN_REFRESH_FEEDBACK_MS = 350L
         const val MAX_HISTORY_SAMPLES = 60
+        const val TINYSA_DEFAULT_START_HZ = 400_000_000L
+        const val TINYSA_DEFAULT_STOP_HZ = 500_000_000L
+        const val TINYSA_DEFAULT_POINTS = 200
     }
 }
-
-
