@@ -1,7 +1,11 @@
 package com.rfscope.app
 
 import android.Manifest
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -25,8 +29,22 @@ class MainActivity : ComponentActivity() {
         viewModel.onPermissionsChanged()
     }
 
+    private val usbPermissionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == ACTION_USB_PERMISSION) {
+                viewModel.refresh()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ContextCompat.registerReceiver(
+            this,
+            usbPermissionReceiver,
+            IntentFilter(ACTION_USB_PERMISSION),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
         setContent {
             RFScopeTheme {
                 val state = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -38,6 +56,7 @@ class MainActivity : ComponentActivity() {
                     onRequestWifiPermissions = {
                         requestPermissions(wifiPermissions())
                     },
+                    onRequestUsbPermission = ::requestUsbPermission,
                     onRefresh = viewModel::refresh,
                     onScanWifi = viewModel::scanWifi,
                     onOpenAppSettings = ::openAppSettings,
@@ -46,6 +65,11 @@ class MainActivity : ComponentActivity() {
             }
         }
         window.decorView.post { requestInitialPermissions() }
+    }
+
+    override fun onDestroy() {
+        runCatching { unregisterReceiver(usbPermissionReceiver) }
+        super.onDestroy()
     }
 
     private fun requestInitialPermissions() {
@@ -65,6 +89,18 @@ class MainActivity : ComponentActivity() {
             return
         }
         permissionLauncher.launch(missing.toTypedArray())
+    }
+
+    private fun requestUsbPermission() {
+        val intent = Intent(ACTION_USB_PERMISSION).setPackage(packageName)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_MUTABLE
+            } else {
+                0
+            }
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, intent, flags)
+        viewModel.requestUsbPermission(pendingIntent)
     }
 
     private fun cellularPermissions(): List<String> = buildList {
@@ -106,5 +142,6 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val PERMISSION_PREFERENCES = "rfscope_permissions"
         const val KEY_INITIAL_PERMISSION_ASKED = "initial_permission_asked"
+        const val ACTION_USB_PERMISSION = "com.rfscope.app.USB_PERMISSION"
     }
 }

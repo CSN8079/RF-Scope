@@ -3,22 +3,21 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.3.0 (versionCode 3)
+Version: 0.4.0 (versionCode 4)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
-Built at: 2026-11-07 (Asia/Shanghai)
-APK SHA-256: 0e70a5f82789ae24f113fa2a09de96e346642806be38d87ac46c6b8a259bc1a5
+Built at: 2026-11-08 (Asia/Shanghai)
+APK SHA-256: c75369e80e8fd11bac3645bd83323657f5c4ce15ee3d4933887db3838cc4e74d
 Size: 24535643 bytes
 
-Changes in 0.3.0:
-- LIVE / WI-FI / HARDWARE bottom-page navigation.
-- Signal trend charts now include grid lines, vertical scale labels and time axis.
-- Antenna profiles: HT8 directional, Yagi U5 V3, telescopic GP, small loop.
-- USB Host detection with VID/PID, CDC serial interface and permission state.
-- USB device detection runs alongside the 2-second cellular refresh.
+Changes in 0.4.0:
+- Explicit TinySA identification for VID 0x0483 / PID 0x5740.
+- USB permission request button for the detected CDC device.
+- USB permission result refresh.
+- Hardware page reports CDC serial and permission state.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.
-- TinySA serial protocol driver is still pending; USB detection is diagnostic only.
+- TinySA serial protocol driver is still pending; USB permission is now requestable.
 - NSA/SA NR band/frequency visibility depends on modem and OEM ROM.

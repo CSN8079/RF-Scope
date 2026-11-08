@@ -78,6 +78,7 @@ fun RFScopeScreen(
     state: RfScopeUiState,
     onRequestCellularPermissions: () -> Unit,
     onRequestWifiPermissions: () -> Unit,
+    onRequestUsbPermission: () -> Unit,
     onRefresh: () -> Unit,
     onScanWifi: () -> Unit,
     onOpenAppSettings: () -> Unit,
@@ -120,6 +121,7 @@ fun RFScopeScreen(
                     usb = state.usb,
                     selectedAntenna = selectedAntenna,
                     onAntennaSelected = { antennaName = it.name },
+                    onRequestUsbPermission = onRequestUsbPermission,
                     onRefresh = onRefresh,
                 )
             }
@@ -200,6 +202,7 @@ private fun HardwarePage(
     usb: UsbScanSummary,
     selectedAntenna: AntennaType,
     onAntennaSelected: (AntennaType) -> Unit,
+    onRequestUsbPermission: () -> Unit,
     onRefresh: () -> Unit,
 ) {
     LazyColumn(
@@ -209,7 +212,7 @@ private fun HardwarePage(
     ) {
         item { HardwarePanel(selectedAntenna) }
         item { AntennaSelector(selectedAntenna, onAntennaSelected) }
-        item { UsbDevicePanel(usb, onRefresh) }
+        item { UsbDevicePanel(usb, onRefresh, onRequestUsbPermission) }
         item { FooterNote() }
     }
 }
@@ -933,7 +936,9 @@ private fun AntennaOption(
 private fun UsbDevicePanel(
     usb: UsbScanSummary,
     onRefresh: () -> Unit,
+    onRequestUsbPermission: () -> Unit,
 ) {
+    val likelyDevice = usb.devices.firstOrNull { it.likelyTinySa }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(
             title = "USB HOST",
@@ -975,6 +980,23 @@ private fun UsbDevicePanel(
                 } else {
                     usb.devices.forEach { device ->
                         UsbDeviceRow(device)
+                    }
+                    if (likelyDevice != null && !likelyDevice.permissionGranted) {
+                        TextButton(onClick = onRequestUsbPermission) {
+                            Text(
+                                "REQUEST USB PERMISSION  (请求 USB 权限)",
+                                color = ScopeGreen,
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                        }
+                    } else if (likelyDevice?.permissionGranted == true) {
+                        Text(
+                            "USB PERMISSION: GRANTED  (USB 权限已授权)",
+                            color = ScopeGreen,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 9.sp,
+                        )
                     }
                 }
                 Text(
@@ -1272,6 +1294,7 @@ private fun RFScopePreview() {
             ),
             onRequestCellularPermissions = {},
             onRequestWifiPermissions = {},
+            onRequestUsbPermission = {},
             onRefresh = {},
             onScanWifi = {},
             onOpenAppSettings = {},
@@ -1279,4 +1302,7 @@ private fun RFScopePreview() {
         )
     }
 }
+
+
+
 

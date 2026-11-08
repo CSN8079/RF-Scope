@@ -1,6 +1,7 @@
 package com.rfscope.app
 
 import android.app.Application
+import android.app.PendingIntent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rfscope.app.data.CellInfoReader
@@ -68,6 +69,9 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         scanWifi()
     }
 
+    fun requestUsbPermission(pendingIntent: PendingIntent): Boolean =
+        usbReader.requestPermissionForLikelyTinySa(pendingIntent)
+
     fun scanWifi() {
         if (_uiState.value.wifiScanInProgress) return
         _uiState.update { it.copy(wifiScanInProgress = true) }
@@ -126,4 +130,5 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         const val MAX_HISTORY_SAMPLES = 60
     }
 }
+
 
