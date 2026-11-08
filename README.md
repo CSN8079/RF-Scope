@@ -1,6 +1,8 @@
-# RF-Scope
+# RF-Scope - TinySA Ultra Spectrum & RF Monitor
 
-Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨架。
+![RF-Scope TinySA Ultra UI](docs/screenshots/rf-scope-tinysa.png)
+
+Android 10+ Kotlin + Jetpack Compose RF/network monitor with TinySA Ultra USB spectrum analyzer support.
 
 ## 当前已落地
 
