@@ -164,7 +164,7 @@ fun TinySaPanel(
                 state.messageEn?.let { message ->
                     Text(
                         text = "$message  (${state.messageZh ?: ""})",
-                        color = ScopeMuted,
+                        color = if (state.status == TinySaConnectionStatus.ERROR) ScopeRed else ScopeMuted,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 8.sp,
                     )

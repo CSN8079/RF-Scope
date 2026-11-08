@@ -138,3 +138,11 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - Menu tabs have a clear active state and divider before content.
 - Scale range uses a readable connector and includes 850k RBW.
 - Clean build: dist/RF-Scope-v0.9.1-debug.apk.
+
+
+## v0.9.2 connection diagnostics
+
+- CONNECT requests USB permission automatically when the device is not yet authorized.
+- Serial-open success is no longer overwritten by a first-scan failure.
+- Connection and scan errors are shown in red with the underlying reason.
+- Clean build: dist/RF-Scope-v0.9.2-debug.apk.

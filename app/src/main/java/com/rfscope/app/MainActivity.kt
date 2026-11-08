@@ -60,7 +60,14 @@ class MainActivity : ComponentActivity() {
                         requestPermissions(wifiPermissions())
                     },
                     onRequestUsbPermission = ::requestUsbPermission,
-                    onConnectTinySa = viewModel::connectTinySa,
+                    onConnectTinySa = {
+                        val likelyDevice = state.usb.devices.firstOrNull { it.likelyTinySa }
+                        if (likelyDevice != null && !likelyDevice.permissionGranted) {
+                            requestUsbPermission()
+                        } else {
+                            viewModel.connectTinySa()
+                        }
+                    },
                     onScanTinySa = viewModel::scanTinySa,
                     onStartTinySaLive = viewModel::startTinySaLive,
                     onStopTinySaLive = viewModel::stopTinySaLive,

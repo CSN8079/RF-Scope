@@ -202,11 +202,11 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                     _uiState.update {
                         it.copy(
                             tinySa = it.tinySa.copy(
-                                status = TinySaConnectionStatus.ERROR,
+                                status = TinySaConnectionStatus.CONNECTED,
                                 isScanning = false,
                                 isLive = false,
-                                messageEn = error.message ?: "Live scan failed",
-                                messageZh = "实时扫描失败",
+                                messageEn = "Connected, live scan failed: ${error.message ?: "unknown error"}",
+                                messageZh = "已连接，但实时扫描失败",
                             ),
                         )
                     }
@@ -295,10 +295,10 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                 _uiState.update {
                     it.copy(
                         tinySa = it.tinySa.copy(
-                            status = TinySaConnectionStatus.ERROR,
+                            status = TinySaConnectionStatus.CONNECTED,
                             isScanning = false,
-                            messageEn = error.message ?: "TinySA scan failed",
-                            messageZh = "TinySA 扫描失败",
+                            messageEn = "Connected, scan failed: ${error.message ?: "unknown error"}",
+                            messageZh = "已连接，但扫描失败",
                         ),
                     )
                 }
