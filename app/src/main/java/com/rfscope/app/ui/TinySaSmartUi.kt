@@ -6,6 +6,7 @@ import android.graphics.Paint as AndroidPaint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -717,15 +718,15 @@ private fun sdrTimeLabel(seconds: Long): String = when {
 
 private fun sdrFormatMhzValue(hz: Long): String = String.format(Locale.US, "%.3f", hz / 1_000_000.0)
 
-private data class SdrCarrierPreset(val name: String, val startHz: Long, val stopHz: Long)
+private data class SdrCarrierPreset(val name: String, val nameZh: String, val startHz: Long, val stopHz: Long)
 
 private val sdrCarrierPresets = listOf(
-    SdrCarrierPreset("CMCC n41", 2_515_000_000L, 2_675_000_000L),
-    SdrCarrierPreset("CMCC n79", 4_800_000_000L, 4_900_000_000L),
-    SdrCarrierPreset("CU n78", 3_500_000_000L, 3_600_000_000L),
-    SdrCarrierPreset("CT n78", 3_400_000_000L, 3_500_000_000L),
-    SdrCarrierPreset("CT n1", 2_110_000_000L, 2_170_000_000L),
-    SdrCarrierPreset("CBN n28", 758_000_000L, 788_000_000L),
+    SdrCarrierPreset("CMCC n41", "\u4e2d\u56fd\u79fb\u52a8 n41", 2_515_000_000L, 2_675_000_000L),
+    SdrCarrierPreset("CMCC n79", "\u4e2d\u56fd\u79fb\u52a8 n79", 4_800_000_000L, 4_900_000_000L),
+    SdrCarrierPreset("CU n78", "\u4e2d\u56fd\u8054\u901a n78", 3_500_000_000L, 3_600_000_000L),
+    SdrCarrierPreset("CT n78", "\u4e2d\u56fd\u7535\u4fe1 n78", 3_400_000_000L, 3_500_000_000L),
+    SdrCarrierPreset("CT n1", "\u4e2d\u56fd\u7535\u4fe1 n1", 2_110_000_000L, 2_170_000_000L),
+    SdrCarrierPreset("CBN n28", "\u4e2d\u56fd\u5e7f\u7535 n28", 758_000_000L, 788_000_000L),
 )
 
 @Composable
@@ -790,16 +791,16 @@ fun TinySaMenuDialogV2(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     listOf("FREQ", "LEVEL", "MARKER", "MEASURE", "CONFIG").forEachIndexed { index, label ->
-                        TextButton(
-                            onClick = { tab = index },
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(28.dp)
                                 .background(
                                     color = if (tab == index) ScopeGreen.copy(alpha = 0.14f) else Color.Transparent,
                                     shape = RoundedCornerShape(2.dp),
-                                ),
-                            contentPadding = PaddingValues(0.dp),
+                                )
+                                .clickable { tab = index },
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = label,
@@ -811,6 +812,7 @@ fun TinySaMenuDialogV2(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(3.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -879,7 +881,7 @@ fun TinySaMenuDialogV2(
                             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                         ) {
                             Text(
-                                "${preset.name}  ${sdrFormatHz(preset.startHz)} - ${sdrFormatHz(preset.stopHz)}",
+                                "${preset.name}  ${preset.nameZh}  ${sdrFormatHz(preset.startHz)} - ${sdrFormatHz(preset.stopHz)}",
                                 color = ScopeCyan,
                                 fontSize = 8.sp,
                                 fontFamily = FontFamily.Monospace,
@@ -950,7 +952,7 @@ private fun FreqMenuContent(
                 )
             }
             MiniActionButton(
-                label = "CARRIER",
+                label = "CARRIER (\u8f7d\u6ce2)",
                 active = true,
                 activeColor = ScopeAmber,
                 modifier = Modifier.width(82.dp),
@@ -1052,18 +1054,41 @@ private fun MarkerMenuContent(
         markerText = sdrFormatMhzValue(active?.frequencyHz ?: state.scanStartHz)
     }
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text("MARKER", color = ScopeMuted, fontSize = 8.sp)
             state.markers.forEach { marker ->
                 MiniActionButton(
                     label = "M${marker.id}",
                     active = marker.id == state.activeMarkerId,
                     activeColor = if (marker.enabled) ScopeGreen else ScopeCyan,
+                    modifier = Modifier.weight(1f),
                     onClick = { if (marker.enabled) onSetActiveMarker(marker.id) else onToggleMarker(marker.id) },
                 )
             }
-            MiniActionButton("AUTO PEAK", active = active?.autoPeak == true, activeColor = ScopeAmber, onClick = { onSetMarkerAutoPeak(state.activeMarkerId, true) })
-            MiniActionButton("MANUAL", active = active?.autoPeak == false, onClick = { onSetMarkerAutoPeak(state.activeMarkerId, false) })
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("MODE", color = ScopeMuted, fontSize = 8.sp)
+            MiniActionButton(
+                label = "AUTO PEAK",
+                active = active?.autoPeak == true,
+                activeColor = ScopeAmber,
+                modifier = Modifier.weight(1f),
+                onClick = { onSetMarkerAutoPeak(state.activeMarkerId, true) },
+            )
+            MiniActionButton(
+                label = "MANUAL",
+                active = active?.autoPeak == false,
+                modifier = Modifier.weight(1f),
+                onClick = { onSetMarkerAutoPeak(state.activeMarkerId, false) },
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             MenuField(markerText, { markerText = it }, "M${state.activeMarkerId} MHz", Modifier.weight(1f))

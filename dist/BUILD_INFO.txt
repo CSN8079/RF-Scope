@@ -3,22 +3,20 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.9.2 (versionCode 11)
+Version: 0.9.3 (versionCode 12)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: 5b0491dbc8d921ebc416e3eb6919452872c7606955e89858d5fce2c9984cc453
+APK SHA-256: 1c28e1f495ae8630e9625bbbc02c059d57c7d7b07ac3b43c8611ba7946aa967b
 Size: 24929450 bytes
 
-Changes in 0.9.2:
-- CONNECT now requests USB permission automatically when needed.
-- A failed first scan no longer changes a successfully opened serial port to TINYSA ERROR.
-- Scan failures show a clear connected-but-scan-failed message instead.
-- Error messages are shown in red for easier diagnosis.
-- Fixed layout from 0.9.1 remains: no horizontal main-control swipe, wrapped RBW choices, taller input fields, and 850k RBW.
+Changes in 0.9.3:
+- MARKER layout now uses aligned rows, so AUTO PEAK is fully visible.
+- Menu tab highlight uses an exact-size box and no longer covers the divider.
+- CARRIER band choices include Chinese operator and band names.
+- Connection diagnostics from 0.9.2 are included: auto USB authorization, clearer failures, and red error text.
 
 Notes:
-- If the red message reports USB permission or device not found, recheck the OTG connection and USB authorization.
 - Debug certificate; not suitable for Play Store publishing.
 - Hardware behavior depends on TinySA firmware and OEM USB implementation.

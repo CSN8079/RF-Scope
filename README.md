@@ -146,3 +146,12 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - Serial-open success is no longer overwritten by a first-scan failure.
 - Connection and scan errors are shown in red with the underlying reason.
 - Clean build: dist/RF-Scope-v0.9.2-debug.apk.
+
+
+## v0.9.3 marker and carrier fixes
+
+- MARKER AUTO PEAK controls are split into aligned rows.
+- Active tab highlight no longer overlaps the divider.
+- CARRIER menu shows Chinese operator and band descriptions.
+- Includes v0.9.2 USB permission and connection diagnostics.
+- Clean build: dist/RF-Scope-v0.9.3-debug.apk.
