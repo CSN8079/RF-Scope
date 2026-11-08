@@ -109,3 +109,12 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 
 
 
+
+
+## v0.8.0 UI update
+
+- SmartSDR-style panadapter and frequency-locked waterfall.
+- Shared blue-cyan-green-yellow-red signal color scale.
+- 2dp waterfall rows, aligned time and frequency rulers.
+- dBm scale, threshold line, auto-peak marker, and compact TinySA menu.
+- Clean build: dist/RF-Scope-v0.8.0-debug.apk.

@@ -3,26 +3,21 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.7.0 (versionCode 7)
+Version: 0.8.0 (versionCode 8)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: a4f3d3438457e9eba0a379f72719b4ae5ab337d296f8b3a8f93bc83fb6d1ae40
-Size: 24814762 bytes
+APK SHA-256: 2b238e61dc28eb7a2864149cf6458f0cae8de2ce9a9952d6482a4770ff002f79
+Size: 24896682 bytes
 
-Changes in 0.7.0:
-- Live TinySA scan loop with single scan and LIVE/STOP.
-- Fixed-row, timestamped 240-frame waterfall without vertical compression.
-- Manual start/stop/points frequency controls.
-- More presets including carrier 4G/5G band chooser.
-- RBW choices and VBW/AVG smoothing options.
-- TONE modes PEAK / AVERAGE / MARKER and adjustable TONE reference level.
-- Four markers M1-M4 with frequency entry and graph labels.
-- Stop LIVE automatically stops TONE.
-- SignalStrength event callback sampling and 120-second trend window.
-- Three-bar icons in RSRP/RSRQ/SINR cards and trend rows.
-- WiFi parabolic channel charts with SSID labels, selection highlighting, 5GHz empty-channel compression.
+Changes in 0.8.0:
+- SmartSDR-style panadapter with dBm grid, colored trace, fill, and peak marker.
+- Waterfall is frequency-locked to the spectrum with the same 48dp plot gutter.
+- Trace and waterfall share the blue-cyan-green-yellow-red signal color scale.
+- One scan creates one 2dp waterfall row; timestamps remain visible.
+- Compact time and frequency rulers make the two displays directly comparable.
+- Threshold line, auto-peak markers, and a compact TinySA menu dialog.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.

@@ -142,12 +142,15 @@ enum class TinySaToneMode {
 data class TinySaWaterfallRow(
     val timestampMs: Long,
     val powersDbm: FloatArray,
+ val startHz: Long = 0L,
+ val stopHz: Long = 0L,
 )
 
 data class TinySaMarker(
     val id: Int,
     val enabled: Boolean,
     val frequencyHz: Long,
+    val autoPeak: Boolean = false,
 )
 
 data class TinySaUiState(
@@ -158,7 +161,7 @@ data class TinySaUiState(
     val isLive: Boolean = false,
     val scanStartHz: Long = 400_000_000L,
     val scanStopHz: Long = 500_000_000L,
-    val scanPoints: Int = 200,
+    val scanPoints: Int = 400,
     val rbwKhz: Int? = null,
     val averageMode: TinySaAverageMode = TinySaAverageMode.OFF,
     val toneMode: TinySaToneMode = TinySaToneMode.PEAK,
@@ -173,6 +176,12 @@ data class TinySaUiState(
     val isToneEnabled: Boolean = false,
     val toneFrequencyHz: Double = 440.0,
     val toneReferenceDbm: Double = -20.0,
+    val thresholdEnabled: Boolean = false,
+    val thresholdDbm: Double = -30.0,
+    val dfMaxPeakDbm: Double? = null,
+    val dfMaxPeakHz: Double? = null,
+    val dfCaptureCount: Int = 0,
+    val dfTargetNote: String = "",
     val messageEn: String? = null,
     val messageZh: String? = null,
 )
@@ -186,7 +195,3 @@ data class RfScopeUiState(
     val isRefreshing: Boolean = false,
     val lastUpdatedEpochMs: Long? = null,
 )
-
-
-
-
