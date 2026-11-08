@@ -23,6 +23,12 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - Wi‑Fi 2.4/5/6 GHz 信道占用图，按信号强度着色。
 - 趋势图按固定 120 秒窗口、缺失采样断线，并显示相对时间刻度（0s、-Xs、-Xm）。
 - 实时 TinySA 频谱扫描、LIVE/STOP、单次扫描和范围预设。
+- 手动起始/终止频率、扫描点数、RBW 和 VBW/AVG 选项。
+- 移动/联通/电信/广电 4G/5G 频段选择。
+- PEAK / AVERAGE / MARKER 三种 TONE 模式与可调参考电平。
+- 多 Marker M1-M4。
+- 固定行高、按扫描逐行堆叠并带时间刻度的瀑布图。
+- WiFi 峰顶 SSID 标注、5GHz 空闲信道压缩显示。
 - 最长 240 帧频谱瀑布图。
 - 峰值强度驱动的自动升调/升音量提示音。
 - RSRP/RSRQ/SINR 三格信号图标。
@@ -96,6 +102,7 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 4. 模拟器通常不会返回真实蜂窝小区，必须用带 SIM 的真机验证。
 
 > 本文档和代码骨架中的 WiFi/Telephony 行为均以公开 Android API 为准；不同厂商 ROM 的结果可能显著不同。
+
 
 
 

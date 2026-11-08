@@ -58,6 +58,8 @@ import com.rfscope.app.data.WifiNetwork
 import com.rfscope.app.data.WifiScanOutcome
 import com.rfscope.app.data.WifiScanStatus
 import com.rfscope.app.data.TinySaConnectionStatus
+import com.rfscope.app.data.TinySaAverageMode
+import com.rfscope.app.data.TinySaToneMode
 import com.rfscope.app.data.TinySaUiState
 import com.rfscope.app.ui.theme.RFScopeTheme
 import com.rfscope.app.ui.theme.ScopeAmber
@@ -90,6 +92,13 @@ fun RFScopeScreen(
     onStopTinySaLive: () -> Unit,
     onToggleTinySaTone: () -> Unit,
     onSetTinySaRange: (Long, Long, Int) -> Unit,
+    onSetTinySaRbw: (Int?) -> Unit,
+    onSetTinySaAverage: (TinySaAverageMode) -> Unit,
+    onSetTinySaToneMode: (TinySaToneMode) -> Unit,
+    onSetTinySaToneReference: (Double) -> Unit,
+    onToggleTinySaMarker: (Int) -> Unit,
+    onSetTinySaMarkerFrequency: (Int, Long) -> Unit,
+    onSetActiveTinySaMarker: (Int) -> Unit,
     onRefresh: () -> Unit,
     onScanWifi: () -> Unit,
     onOpenAppSettings: () -> Unit,
@@ -140,6 +149,13 @@ fun RFScopeScreen(
                     onStopTinySaLive = onStopTinySaLive,
                     onToggleTinySaTone = onToggleTinySaTone,
                     onSetTinySaRange = onSetTinySaRange,
+                    onSetTinySaRbw = onSetTinySaRbw,
+                    onSetTinySaAverage = onSetTinySaAverage,
+                    onSetTinySaToneMode = onSetTinySaToneMode,
+                    onSetTinySaToneReference = onSetTinySaToneReference,
+                    onToggleTinySaMarker = onToggleTinySaMarker,
+                    onSetTinySaMarkerFrequency = onSetTinySaMarkerFrequency,
+                    onSetActiveTinySaMarker = onSetActiveTinySaMarker,
                     onRefresh = onRefresh,
                 )
             }
@@ -228,6 +244,13 @@ private fun HardwarePage(
     onStopTinySaLive: () -> Unit,
     onToggleTinySaTone: () -> Unit,
     onSetTinySaRange: (Long, Long, Int) -> Unit,
+    onSetTinySaRbw: (Int?) -> Unit,
+    onSetTinySaAverage: (TinySaAverageMode) -> Unit,
+    onSetTinySaToneMode: (TinySaToneMode) -> Unit,
+    onSetTinySaToneReference: (Double) -> Unit,
+    onToggleTinySaMarker: (Int) -> Unit,
+    onSetTinySaMarkerFrequency: (Int, Long) -> Unit,
+    onSetActiveTinySaMarker: (Int) -> Unit,
     onRefresh: () -> Unit,
 ) {
     LazyColumn(
@@ -247,6 +270,13 @@ private fun HardwarePage(
                 onStopLive = onStopTinySaLive,
                 onToggleTone = onToggleTinySaTone,
                 onSetRange = onSetTinySaRange,
+                onSetRbw = onSetTinySaRbw,
+                onSetAverage = onSetTinySaAverage,
+                onSetToneMode = onSetTinySaToneMode,
+                onSetToneReference = onSetTinySaToneReference,
+                onToggleMarker = onToggleTinySaMarker,
+                onSetMarkerFrequency = onSetTinySaMarkerFrequency,
+                onSetActiveMarker = onSetActiveTinySaMarker,
             )
         }
         item { FooterNote() }
@@ -1401,6 +1431,13 @@ private fun RFScopePreview() {
             onStopTinySaLive = {},
             onToggleTinySaTone = {},
             onSetTinySaRange = { _, _, _ -> },
+            onSetTinySaRbw = {},
+            onSetTinySaAverage = {},
+            onSetTinySaToneMode = {},
+            onSetTinySaToneReference = {},
+            onToggleTinySaMarker = {},
+            onSetTinySaMarkerFrequency = { _, _ -> },
+            onSetActiveTinySaMarker = {},
             onRefresh = {},
             onScanWifi = {},
             onOpenAppSettings = {},

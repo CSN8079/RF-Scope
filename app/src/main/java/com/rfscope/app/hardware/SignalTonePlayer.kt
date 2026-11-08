@@ -72,8 +72,10 @@ class SignalTonePlayer {
         }
     }
 
-    fun updateLevel(levelDbm: Double) {
-        val normalized = ((levelDbm.coerceIn(-100.0, -20.0) + 100.0) / 80.0)
+    fun updateLevel(levelDbm: Double, referenceDbm: Double = -20.0) {
+        val reference = referenceDbm.coerceIn(-100.0, -10.0)
+        val floor = reference - 80.0
+        val normalized = ((levelDbm.coerceIn(floor, reference) - floor) / 80.0)
         targetFrequency = 220.0 + normalized * 1500.0
         targetAmplitude = 0.05 + normalized * 0.55
     }
@@ -97,9 +99,12 @@ class SignalTonePlayer {
     companion object {
         const val SAMPLE_RATE = 44_100
 
-        fun frequencyForLevel(levelDbm: Double): Double {
-            val normalized = ((levelDbm.coerceIn(-100.0, -20.0) + 100.0) / 80.0)
+        fun frequencyForLevel(levelDbm: Double, referenceDbm: Double = -20.0): Double {
+            val reference = referenceDbm.coerceIn(-100.0, -10.0)
+            val floor = reference - 80.0
+            val normalized = ((levelDbm.coerceIn(floor, reference) - floor) / 80.0)
             return 220.0 + normalized * 1500.0
         }
     }
 }
+

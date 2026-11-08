@@ -8,6 +8,7 @@ import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.os.SystemClock
+import com.rfscope.app.data.TinySaAverageMode
 import com.rfscope.app.data.TinySaSpectrum
 import java.io.ByteArrayOutputStream
 
@@ -80,13 +81,20 @@ class TinySaUsbTransport(context: Context) {
     }
 
     @Synchronized
-    fun scan(startHz: Long, stopHz: Long, points: Int = 200): Result<TinySaSpectrum> = runCatching {
+    fun scan(startHz: Long, stopHz: Long, points: Int = 200, rbwKhz: Int? = null, averageMode: TinySaAverageMode = TinySaAverageMode.OFF): Result<TinySaSpectrum> = runCatching {
         require(startHz in 1L until stopHz) { "Invalid frequency range" }
         require(points in 2..1000) { "Invalid point count" }
 
         val opened = connection ?: error("TinySA not connected")
         val input = inputEndpoint ?: error("CDC input endpoint missing")
         val output = outputEndpoint ?: error("CDC output endpoint missing")
+
+        sendCommand(opened, output, if (rbwKhz == null) "rbw auto\r" else "rbw $rbwKhz\r")
+        sendCommand(opened, output, when (averageMode) {
+            TinySaAverageMode.OFF -> "calc off\r"
+            TinySaAverageMode.AVER4 -> "calc aver4\r"
+            TinySaAverageMode.AVER16 -> "calc aver16\r"
+        })
 
         val command = "scanraw $startHz $stopHz $points 1\r".toByteArray(Charsets.US_ASCII)
         val written = opened.bulkTransfer(output, command, command.size, 2000)
@@ -104,6 +112,12 @@ class TinySaUsbTransport(context: Context) {
         val output = outputEndpoint ?: return
         val command = "abort\r".toByteArray(Charsets.US_ASCII)
         runCatching { opened.bulkTransfer(output, command, command.size, 500) }
+    }
+
+    private fun sendCommand(connection: UsbDeviceConnection, endpoint: UsbEndpoint, command: String) {
+        val bytes = command.toByteArray(Charsets.US_ASCII)
+        connection.bulkTransfer(endpoint, bytes, bytes.size, 1000)
+        Thread.sleep(25)
     }
 
     private fun configureLine(connection: UsbDeviceConnection, control: UsbInterface) {
@@ -218,3 +232,4 @@ class TinySaUsbTransport(context: Context) {
         const val TINYSA_PID = 0x5740
     }
 }
+

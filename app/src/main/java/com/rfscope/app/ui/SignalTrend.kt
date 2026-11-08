@@ -90,6 +90,7 @@ fun SignalTrendCard(history: List<SignalSample>) {
             } else {
                 SparkRow(
                     label = "RSRP",
+                    metric = SignalMetric.RSRP,
                     zh = "参考信号接收功率",
                     history = history,
                     selector = { it.rsrp },
@@ -99,6 +100,7 @@ fun SignalTrendCard(history: List<SignalSample>) {
                 )
                 SparkRow(
                     label = "RSRQ",
+                    metric = SignalMetric.RSRQ,
                     zh = "参考信号接收质量",
                     history = history,
                     selector = { it.rsrq },
@@ -108,6 +110,7 @@ fun SignalTrendCard(history: List<SignalSample>) {
                 )
                 SparkRow(
                     label = "SINR",
+                    metric = SignalMetric.SINR,
                     zh = "信噪比",
                     history = history,
                     selector = { it.sinr },
@@ -124,6 +127,7 @@ fun SignalTrendCard(history: List<SignalSample>) {
 @Composable
 private fun SparkRow(
     label: String,
+    metric: SignalMetric,
     zh: String,
     history: List<SignalSample>,
     selector: (SignalSample) -> Int?,
@@ -164,6 +168,8 @@ private fun SparkRow(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
             )
+            Spacer(Modifier.width(6.dp))
+            SignalBars(signalBarsForMetric(metric, current))
         }
 
         Row(

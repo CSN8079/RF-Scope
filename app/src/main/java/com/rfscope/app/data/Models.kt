@@ -127,22 +127,55 @@ data class TinySaSpectrum(
     val capturedAtMs: Long,
 )
 
+enum class TinySaAverageMode {
+    OFF,
+    AVER4,
+    AVER16,
+}
+
+enum class TinySaToneMode {
+    PEAK,
+    AVERAGE,
+    MARKER,
+}
+
+data class TinySaWaterfallRow(
+    val timestampMs: Long,
+    val powersDbm: FloatArray,
+)
+
+data class TinySaMarker(
+    val id: Int,
+    val enabled: Boolean,
+    val frequencyHz: Long,
+)
+
 data class TinySaUiState(
     val status: TinySaConnectionStatus = TinySaConnectionStatus.DISCONNECTED,
     val spectrum: TinySaSpectrum? = null,
-    val waterfall: List<FloatArray> = emptyList(),
+    val waterfall: List<TinySaWaterfallRow> = emptyList(),
     val isScanning: Boolean = false,
     val isLive: Boolean = false,
     val scanStartHz: Long = 400_000_000L,
     val scanStopHz: Long = 500_000_000L,
     val scanPoints: Int = 200,
+    val rbwKhz: Int? = null,
+    val averageMode: TinySaAverageMode = TinySaAverageMode.OFF,
+    val toneMode: TinySaToneMode = TinySaToneMode.PEAK,
+    val markers: List<TinySaMarker> = listOf(
+        TinySaMarker(1, true, 450_000_000L),
+        TinySaMarker(2, false, 425_000_000L),
+        TinySaMarker(3, false, 475_000_000L),
+        TinySaMarker(4, false, 500_000_000L),
+    ),
+    val activeMarkerId: Int = 1,
     val lastScanDurationMs: Long? = null,
     val isToneEnabled: Boolean = false,
     val toneFrequencyHz: Double = 440.0,
+    val toneReferenceDbm: Double = -20.0,
     val messageEn: String? = null,
     val messageZh: String? = null,
 )
-
 data class RfScopeUiState(
     val cellular: CellularSnapshot = CellularSnapshot(),
     val wifi: WifiScanOutcome = WifiScanOutcome(),

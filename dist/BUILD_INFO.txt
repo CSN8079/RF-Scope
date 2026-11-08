@@ -3,25 +3,27 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.6.0 (versionCode 6)
+Version: 0.7.0 (versionCode 7)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: b021a6d3bffdf28a545cabbe375279d8473fab69afb1c8190c147793b6af4ff7
-Size: 25044726 bytes
+APK SHA-256: a4f3d3438457e9eba0a379f72719b4ae5ab337d296f8b3a8f93bc83fb6d1ae40
+Size: 24814762 bytes
 
-Changes in 0.6.0:
-- Live TinySA scan loop with LIVE/STOP and preset ranges.
-- 240-frame spectrum waterfall.
-- Peak-level-driven rising audio tone.
-- RSRP/RSRQ/SINR 3-bar icons with requested thresholds.
-- Event-driven SignalStrength callbacks with polling fallback.
-- 120-second signal trend window with missing samples broken.
-- WiFi channel charts use downward-opening parabolas.
-- WiFi row selection highlights the row and matching channel curve.
-- USB_DEVICE_ATTACHED filter for VID 0x0483 / PID 0x5740.
+Changes in 0.7.0:
+- Live TinySA scan loop with single scan and LIVE/STOP.
+- Fixed-row, timestamped 240-frame waterfall without vertical compression.
+- Manual start/stop/points frequency controls.
+- More presets including carrier 4G/5G band chooser.
+- RBW choices and VBW/AVG smoothing options.
+- TONE modes PEAK / AVERAGE / MARKER and adjustable TONE reference level.
+- Four markers M1-M4 with frequency entry and graph labels.
+- Stop LIVE automatically stops TONE.
+- SignalStrength event callback sampling and 120-second trend window.
+- Three-bar icons in RSRP/RSRQ/SINR cards and trend rows.
+- WiFi parabolic channel charts with SSID labels, selection highlighting, 5GHz empty-channel compression.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.
-- TinySA scanrange currently selected by presets 400-500M / 430-440M / 2.4-2.5G.
+- Hardware behavior depends on TinySA firmware and OEM USB implementation.
