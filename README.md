@@ -155,3 +155,8 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - CARRIER menu shows Chinese operator and band descriptions.
 - Includes v0.9.2 USB permission and connection diagnostics.
 - Clean build: dist/RF-Scope-v0.9.3-debug.apk.
+
+
+## License
+
+This project is released under the MIT License. See [LICENSE](LICENSE) for details.
