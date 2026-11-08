@@ -396,7 +396,23 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         _uiState.update { it.copy(tinySa = it.tinySa.copy(thresholdDbm = dbm.coerceIn(-120.0, 0.0))) }
     }
 
-    fun toggleTinySaMarker(id: Int) {
+    fun setSpectrumScaleAuto(enabled: Boolean) {
+ _uiState.update { it.copy(tinySa = it.tinySa.copy(spectrumScaleAuto = enabled)) }
+ }
+
+ fun setSpectrumScaleMin(dbm: Double) {
+ _uiState.update { state -> val max = state.tinySa.spectrumScaleMaxDbm
+ state.copy(tinySa = state.tinySa.copy(spectrumScaleAuto = false, spectrumScaleMinDbm = dbm.coerceIn(-150.0, max - 10.0)))
+ }
+ }
+
+ fun setSpectrumScaleMax(dbm: Double) {
+ _uiState.update { state -> val min = state.tinySa.spectrumScaleMinDbm
+ state.copy(tinySa = state.tinySa.copy(spectrumScaleAuto = false, spectrumScaleMaxDbm = dbm.coerceIn(min + 10.0, 10.0)))
+ }
+ }
+
+ fun toggleTinySaMarker(id: Int) {
         _uiState.update { state ->
             val marker = state.tinySa.markers.firstOrNull { it.id == id } ?: return@update state
             val enabled = !marker.enabled

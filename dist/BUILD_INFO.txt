@@ -3,21 +3,23 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.8.0 (versionCode 8)
+Version: 0.9.0 (versionCode 9)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: 2b238e61dc28eb7a2864149cf6458f0cae8de2ce9a9952d6482a4770ff002f79
-Size: 24896682 bytes
+APK SHA-256: 5d3877f30b141ede090e1f0f49d07d7231b80cc816f007aeb0882c44c831cbfc
+Size: 24929450 bytes
 
-Changes in 0.8.0:
-- SmartSDR-style panadapter with dBm grid, colored trace, fill, and peak marker.
-- Waterfall is frequency-locked to the spectrum with the same 48dp plot gutter.
-- Trace and waterfall share the blue-cyan-green-yellow-red signal color scale.
-- One scan creates one 2dp waterfall row; timestamps remain visible.
-- Compact time and frequency rulers make the two displays directly comparable.
-- Threshold line, auto-peak markers, and a compact TinySA menu dialog.
+Changes in 0.9.0:
+- Live spectrum performance: incremental bitmap waterfall renderer.
+- Waterfall viewport is now 120 rows at 2dp per row, no per-scan full redraw.
+- RBW and AVG settings are sent only when changed.
+- TinySA-style tabbed menu: FREQ / LEVEL / MARKER / MEASURE / CONFIG.
+- LIVE, SINGLE, TONE, TONE mode, and TONE REF are on the main screen.
+- LEVEL tab supports auto/manual dBm scale and top/bottom range adjustment.
+- Added RBW 600k and 850k options.
+- Spectrum and waterfall stay frequency-locked with the same plot gutter.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.

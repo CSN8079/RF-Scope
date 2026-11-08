@@ -118,3 +118,13 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - 2dp waterfall rows, aligned time and frequency rulers.
 - dBm scale, threshold line, auto-peak marker, and compact TinySA menu.
 - Clean build: dist/RF-Scope-v0.8.0-debug.apk.
+
+
+## v0.9.0 performance and menu update
+
+- Incremental bitmap waterfall rendering for fluid LIVE scanning.
+- Compact TinySA-style FREQ / LEVEL / MARKER / MEASURE / CONFIG menu.
+- LIVE, SINGLE, TONE modes and TONE REF are available on the main screen.
+- Manual dBm display range in the LEVEL tab.
+- RBW options now include 600k and 850k.
+- Clean build: dist/RF-Scope-v0.9.0-debug.apk.

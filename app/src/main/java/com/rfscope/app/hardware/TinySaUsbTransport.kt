@@ -19,6 +19,9 @@ class TinySaUsbTransport(context: Context) {
     private var inputEndpoint: UsbEndpoint? = null
     private var outputEndpoint: UsbEndpoint? = null
     private var claimedInterfaces: List<UsbInterface> = emptyList()
+    private var settingsInitialized = false
+    private var lastRbwKhz: Int? = null
+    private var lastAverageMode: TinySaAverageMode? = null
 
     @Synchronized
     fun connect(): Result<Unit> = runCatching {
@@ -62,6 +65,9 @@ class TinySaUsbTransport(context: Context) {
             inputEndpoint = input
             outputEndpoint = output
             claimedInterfaces = listOfNotNull(controlInterface, dataInterface)
+            settingsInitialized = false
+            lastRbwKhz = null
+            lastAverageMode = null
             Thread.sleep(120)
         } catch (error: Throwable) {
             opened.close()
@@ -75,6 +81,9 @@ class TinySaUsbTransport(context: Context) {
         claimedInterfaces.forEach { iface -> runCatching { current?.releaseInterface(iface) } }
         runCatching { current?.close() }
         claimedInterfaces = emptyList()
+        settingsInitialized = false
+        lastRbwKhz = null
+        lastAverageMode = null
         connection = null
         inputEndpoint = null
         outputEndpoint = null
@@ -89,12 +98,19 @@ class TinySaUsbTransport(context: Context) {
         val input = inputEndpoint ?: error("CDC input endpoint missing")
         val output = outputEndpoint ?: error("CDC output endpoint missing")
 
-        sendCommand(opened, output, if (rbwKhz == null) "rbw auto\r" else "rbw $rbwKhz\r")
-        sendCommand(opened, output, when (averageMode) {
-            TinySaAverageMode.OFF -> "calc off\r"
-            TinySaAverageMode.AVER4 -> "calc aver4\r"
-            TinySaAverageMode.AVER16 -> "calc aver16\r"
-        })
+        if (!settingsInitialized || rbwKhz != lastRbwKhz) {
+            sendCommand(opened, output, if (rbwKhz == null) "rbw auto\r" else "rbw $rbwKhz\r")
+        }
+        if (!settingsInitialized || averageMode != lastAverageMode) {
+            sendCommand(opened, output, when (averageMode) {
+                TinySaAverageMode.OFF -> "calc off\r"
+                TinySaAverageMode.AVER4 -> "calc aver4\r"
+                TinySaAverageMode.AVER16 -> "calc aver16\r"
+            })
+        }
+        settingsInitialized = true
+        lastRbwKhz = rbwKhz
+        lastAverageMode = averageMode
 
         val command = "scanraw $startHz $stopHz $points 1\r".toByteArray(Charsets.US_ASCII)
         val written = opened.bulkTransfer(output, command, command.size, 2000)
