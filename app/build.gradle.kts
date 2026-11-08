@@ -12,8 +12,8 @@ android {
         applicationId = "com.rfscope.app"
         minSdk = 29
         targetSdk = 34
-        versionCode = 15
-        versionName = "0.10.2"
+        versionCode = 16
+        versionName = "0.10.3"
     }
 
     buildFeatures {

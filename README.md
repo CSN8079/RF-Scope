@@ -191,3 +191,11 @@ This project is released under the MIT License. See [LICENSE](LICENSE) for detai
 - Live and single scans now preserve the selected TONE REF value.
 - TONE mode and reference level are applied consistently on every scan.
 - Clean build: dist/RF-Scope-v0.10.2-debug.apk.
+
+
+## v0.10.3 software CALC modes
+
+- AVER4, AVER16, MAX HOLD and MIN HOLD are now applied in the app.
+- CALC behavior no longer depends on TinySA firmware command support.
+- Changing CALC mode or scan range starts a fresh calculation window.
+- Clean build: dist/RF-Scope-v0.10.3-debug.apk.

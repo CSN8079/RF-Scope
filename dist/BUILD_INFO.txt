@@ -3,19 +3,22 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.10.2 (versionCode 15)
+Version: 0.10.3 (versionCode 16)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: 4adbc2617ee1b5b3e75b1bdbf2aab008c2fcb949f8b0a42770ca5c0089981a5d
+APK SHA-256: d08fb0fa5b0814a7cca73423e6b45bd4c397311862a0aa6b55913e9e3e3c39ef
 Size: 24945826 bytes
 
-Changes in 0.10.2:
-- Fixed TONE REF slider snap-back bug.
-- Every live/single scan now uses the current TONE REF and TONE mode.
-- Turning TONE on now starts from the selected reference level immediately.
-- Includes PAUSE, MAX/MIN CALC HOLD, MAX EVER markers, 1-second cellular polling, and the v0.10 visual refresh.
+Changes in 0.10.3:
+- CALC / VBW now performs AVER4, AVER16, MAX HOLD and MIN HOLD in the app.
+- scanraw is kept as raw data, so CALC behavior no longer depends on TinySA firmware support.
+- Changing CALC mode or frequency range starts a new calculation window.
+- MAX HOLD accumulates the highest level per frequency bin.
+- MIN HOLD accumulates the lowest level per frequency bin.
+- AVER4 / AVER16 use the selected number of recent sweeps.
+- Includes v0.10.2 TONE REF fix, PAUSE, MAX EVER and the v0.10 visual refresh.
 
 Notes:
-- Debug certificate; not suitable for Play Store publishing.
+- Debug certificate; not for Play Store publishing.

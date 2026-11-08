@@ -101,14 +101,10 @@ class TinySaUsbTransport(context: Context) {
         if (!settingsInitialized || rbwKhz != lastRbwKhz) {
             sendCommand(opened, output, if (rbwKhz == null) "rbw auto\r" else "rbw $rbwKhz\r")
         }
-        if (!settingsInitialized || averageMode != lastAverageMode) {
-            sendCommand(opened, output, when (averageMode) {
-                TinySaAverageMode.OFF -> "calc off\r"
-                TinySaAverageMode.AVER4 -> "calc aver4\r"
-                TinySaAverageMode.AVER16 -> "calc aver16\r"
-                TinySaAverageMode.MAX_HOLD -> "calc max\r"
-                TinySaAverageMode.MIN_HOLD -> "calc min\r"
-            })
+        if (!settingsInitialized) {
+            // scanraw returns raw trace data. CALC modes are applied in the app
+            // so AVER4/AVER16/MAX HOLD/MIN HOLD work across TinySA firmware versions.
+            sendCommand(opened, output, "calc off\r")
         }
         settingsInitialized = true
         lastRbwKhz = rbwKhz

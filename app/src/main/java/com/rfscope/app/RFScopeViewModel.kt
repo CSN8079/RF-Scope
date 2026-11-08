@@ -43,6 +43,11 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
     val uiState: StateFlow<RfScopeUiState> = _uiState
 
     private val signalHistory = ArrayDeque<SignalSample>()
+    private val calcFrames = ArrayDeque<DoubleArray>()
+    private var calcMode = TinySaAverageMode.OFF
+    private var calcStartHz = 0L
+    private var calcStopHz = 0L
+    private var calcPoints = 0
     private var pollJob: Job? = null
     private var refreshJob: Job? = null
     private var tinySaLiveJob: Job? = null
@@ -128,6 +133,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
 
     fun setTinySaScanRange(startHz: Long, stopHz: Long, points: Int) {
         if (stopHz <= startHz) return
+        resetCalcState(_uiState.value.tinySa.averageMode)
         val safePoints = points.coerceIn(50, 1000)
         _uiState.update {
             it.copy(
@@ -137,6 +143,9 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                     scanPoints = safePoints,
                     spectrum = null,
                     waterfall = emptyList(),
+                    // CALC history must match the new frequency range.
+                    // The raw trace will seed a new calculation window.
+                    
                     lastScanDurationMs = null,
                     messageEn = "Scan range updated",
                     messageZh = "扫描范围已更新",
@@ -180,8 +189,9 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                      averageMode = current.averageMode,
                     )
                 }
-                result.onSuccess { spectrum ->
+                result.onSuccess { rawSpectrum ->
                     if (!isActive || _uiState.value.tinySa.isPaused) return@onSuccess
+                    val spectrum = applyTinySaCalc(rawSpectrum, _uiState.value.tinySa.averageMode)
                     val duration = System.currentTimeMillis() - startedAt
                     val toneState = _uiState.value.tinySa
                     val toneLevel = toneLevelFor(spectrum, toneState)
@@ -334,7 +344,8 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                  averageMode = current.averageMode,
                 )
             }
-            result.onSuccess { spectrum ->
+            result.onSuccess { rawSpectrum ->
+                val spectrum = applyTinySaCalc(rawSpectrum, _uiState.value.tinySa.averageMode)
                 val duration = System.currentTimeMillis() - startedAt
                 val toneState = _uiState.value.tinySa
                 val toneLevel = toneLevelFor(spectrum, toneState)
@@ -442,6 +453,7 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setTinySaAverage(mode: TinySaAverageMode) {
+        resetCalcState(mode)
         _uiState.update { it.copy(tinySa = it.tinySa.copy(averageMode = mode)) }
     }
 
@@ -563,6 +575,70 @@ private fun TinySaUiState.withMaxPeak(spectrum: TinySaSpectrum): TinySaUiState {
     } else {
         this
     }
+}
+private fun applyTinySaCalc(raw: TinySaSpectrum, mode: TinySaAverageMode): TinySaSpectrum {
+    if (mode == TinySaAverageMode.OFF) {
+        resetCalcState(TinySaAverageMode.OFF)
+        return raw
+    }
+    val needsReset = mode != calcMode ||
+        raw.startHz != calcStartHz ||
+        raw.stopHz != calcStopHz ||
+        raw.points != calcPoints
+    if (needsReset) {
+        resetCalcState(mode)
+        calcMode = mode
+        calcStartHz = raw.startHz
+        calcStopHz = raw.stopHz
+        calcPoints = raw.points
+    }
+
+    val powers = when (mode) {
+        TinySaAverageMode.AVER4, TinySaAverageMode.AVER16 -> {
+            val limit = if (mode == TinySaAverageMode.AVER4) 4 else 16
+            calcFrames.addLast(raw.powersDbm.copyOf())
+            while (calcFrames.size > limit) calcFrames.removeFirst()
+            DoubleArray(raw.points) { index ->
+                var sum = 0.0
+                calcFrames.forEach { sum += it[index] }
+                sum / calcFrames.size
+            }
+        }
+        TinySaAverageMode.MAX_HOLD, TinySaAverageMode.MIN_HOLD -> {
+            val previous = calcFrames.lastOrNull()
+            val value = DoubleArray(raw.points) { index ->
+                if (previous == null) raw.powersDbm[index]
+                else if (mode == TinySaAverageMode.MAX_HOLD) maxOf(previous[index], raw.powersDbm[index])
+                else minOf(previous[index], raw.powersDbm[index])
+            }
+            calcFrames.clear()
+            calcFrames.addLast(value)
+            value
+        }
+        TinySaAverageMode.OFF -> raw.powersDbm
+    }
+    return raw.withPowers(powers)
+}
+
+private fun resetCalcState(mode: TinySaAverageMode) {
+    calcFrames.clear()
+    calcMode = mode
+    calcStartHz = 0L
+    calcStopHz = 0L
+    calcPoints = 0
+}
+
+private fun TinySaSpectrum.withPowers(powers: DoubleArray): TinySaSpectrum {
+    val peakIndex = powers.indices.maxByOrNull { powers[it] } ?: 0
+    val sorted = powers.sortedArray()
+    val noiseFloor = sorted[(sorted.size * 0.2).toInt().coerceIn(0, sorted.lastIndex)]
+    return copy(
+        powersDbm = powers,
+        peakIndex = peakIndex,
+        peakHz = frequenciesHz[peakIndex],
+        peakDbm = powers[peakIndex],
+        noiseFloorDbm = noiseFloor,
+    )
 }
     private fun toneLevelFor(spectrum: TinySaSpectrum, state: TinySaUiState): Double {
         return when (state.toneMode) {
