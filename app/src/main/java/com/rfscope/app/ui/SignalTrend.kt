@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,8 +36,11 @@ import com.rfscope.app.ui.theme.ScopePanel
 import com.rfscope.app.ui.theme.ScopeWhite
 import kotlin.math.roundToLong
 
+private const val TREND_WINDOW_MS = 120_000L
+
 @Composable
 fun SignalTrendCard(history: List<SignalSample>) {
+    val measuredCount = history.count { it.rsrp != null || it.rsrq != null || it.sinr != null }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(4.dp),
@@ -64,21 +66,21 @@ fun SignalTrendCard(history: List<SignalSample>) {
                         letterSpacing = 1.3.sp,
                     )
                     Text(
-                        text = "(信号趋势)  MEASURED SAMPLES ONLY",
+                        text = "(信号趋势)  LAST 120s / MEASURED ONLY",
                         color = ScopeMuted,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 9.sp,
                     )
                 }
                 Text(
-                    text = "${history.size.coerceAtMost(60)} / 60 SAMPLES",
+                    text = "$measuredCount MEASURED",
                     color = ScopeMuted,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 9.sp,
                 )
             }
 
-            if (history.isEmpty()) {
+            if (measuredCount == 0) {
                 Text(
                     text = "WAITING FOR MEASURED DATA  (等待测量数据)",
                     color = ScopeMuted,
@@ -89,32 +91,29 @@ fun SignalTrendCard(history: List<SignalSample>) {
                 SparkRow(
                     label = "RSRP",
                     zh = "参考信号接收功率",
-                    values = history.map { it.rsrp?.toFloat() },
+                    history = history,
+                    selector = { it.rsrp },
                     range = -140f..-40f,
-                    current = history.lastOrNull { it.rsrp != null }?.rsrp,
                     unit = "dBm",
                     color = ScopeGreen,
-                    sampleCount = history.size,
                 )
                 SparkRow(
                     label = "RSRQ",
                     zh = "参考信号接收质量",
-                    values = history.map { it.rsrq?.toFloat() },
+                    history = history,
+                    selector = { it.rsrq },
                     range = -20f..0f,
-                    current = history.lastOrNull { it.rsrq != null }?.rsrq,
                     unit = "dB",
                     color = ScopeAmber,
-                    sampleCount = history.size,
                 )
                 SparkRow(
                     label = "SINR",
                     zh = "信噪比",
-                    values = history.map { it.sinr?.toFloat() },
+                    history = history,
+                    selector = { it.sinr },
                     range = -20f..30f,
-                    current = history.lastOrNull { it.sinr != null }?.sinr,
                     unit = "dB",
                     color = ScopeCyan,
-                    sampleCount = history.size,
                 )
                 TimeAxis(history)
             }
@@ -126,14 +125,18 @@ fun SignalTrendCard(history: List<SignalSample>) {
 private fun SparkRow(
     label: String,
     zh: String,
-    values: List<Float?>,
+    history: List<SignalSample>,
+    selector: (SignalSample) -> Int?,
     range: ClosedFloatingPointRange<Float>,
-    current: Int?,
     unit: String,
     color: Color,
-    sampleCount: Int,
 ) {
-    val validCount = values.count { it != null }
+    val current = history.lastOrNull { selector(it) != null }?.let(selector)
+    val validCount = history.count { selector(it) != null }
+    val windowEnd = history.lastOrNull()?.timestampMs ?: 0L
+    val windowStart = windowEnd - TREND_WINDOW_MS
+    val windowSpan = (windowEnd - windowStart).coerceAtLeast(1L).toFloat()
+
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -192,7 +195,7 @@ private fun SparkRow(
                         color = ScopeGrid,
                         start = Offset(0f, y),
                         end = Offset(size.width, y),
-                        strokeWidth = 1.2f,
+                        strokeWidth = if (index == 0 || index == 4) 1.6f else 1.2f,
                     )
                 }
                 for (index in 0..4) {
@@ -201,22 +204,19 @@ private fun SparkRow(
                         color = ScopeGrid.copy(alpha = 0.55f),
                         start = Offset(x, 0f),
                         end = Offset(x, size.height),
-                        strokeWidth = 1.2f,
+                        strokeWidth = 1.1f,
                     )
                 }
 
                 if (validCount > 0) {
                     var previous: Offset? = null
-                    values.forEachIndexed { index, value ->
-                        if (value == null) {
+                    history.forEach { sample ->
+                        val value = selector(sample)?.toFloat() ?: run {
                             previous = null
-                            return@forEachIndexed
+                            return@forEach
                         }
-                        val x = if (sampleCount <= 1) {
-                            size.width / 2f
-                        } else {
-                            index / (sampleCount - 1f) * size.width
-                        }
+                        val timestamp = sample.timestampMs.coerceIn(windowStart, windowEnd)
+                        val x = (timestamp - windowStart) / windowSpan * size.width
                         val normalized = ((value - range.start) / (range.endInclusive - range.start))
                             .coerceIn(0f, 1f)
                         val point = Offset(x, size.height - normalized * size.height)
@@ -249,11 +249,9 @@ private fun SparkRow(
 
 @Composable
 private fun TimeAxis(history: List<SignalSample>) {
-    val first = history.firstOrNull()?.timestampMs ?: return
     val last = history.lastOrNull()?.timestampMs ?: return
-    val spanMs = (last - first).coerceAtLeast(0L)
     val labels = listOf(0.0, 0.25, 0.5, 0.75, 1.0).map { fraction ->
-        relativeTimeLabel((spanMs * (1.0 - fraction)).roundToLong())
+        relativeTimeLabel((TREND_WINDOW_MS * (1.0 - fraction)).roundToLong())
     }
     Row(
         modifier = Modifier
@@ -272,13 +270,21 @@ private fun TimeAxis(history: List<SignalSample>) {
     }
     Box(Modifier.fillMaxWidth()) {
         Text(
-            text = "TIME  (时间)",
+            text = "TIME  (时间)  •  NOW ${formatClock(last)}",
             color = ScopeMuted,
             fontFamily = FontFamily.Monospace,
             fontSize = 8.sp,
             modifier = Modifier.align(Alignment.Center),
         )
     }
+}
+
+private fun formatClock(epochMs: Long): String {
+    val seconds = (epochMs / 1000L) % 86_400L
+    val hour = seconds / 3600L
+    val minute = (seconds % 3600L) / 60L
+    val second = seconds % 60L
+    return String.format("%02d:%02d:%02d", hour, minute, second)
 }
 
 private fun axisLabel(value: Float): String = value.toInt().toString()
@@ -292,4 +298,3 @@ private fun relativeTimeLabel(deltaMs: Long): String {
         else -> "-${seconds / 60L}m${seconds % 60L}s"
     }
 }
-

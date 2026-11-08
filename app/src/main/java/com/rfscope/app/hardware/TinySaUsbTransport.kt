@@ -98,6 +98,14 @@ class TinySaUsbTransport(context: Context) {
         result
     }
 
+    @Synchronized
+    fun abort() {
+        val opened = connection ?: return
+        val output = outputEndpoint ?: return
+        val command = "abort\r".toByteArray(Charsets.US_ASCII)
+        runCatching { opened.bulkTransfer(output, command, command.size, 500) }
+    }
+
     private fun configureLine(connection: UsbDeviceConnection, control: UsbInterface) {
         val lineCoding = byteArrayOf(
             0x00, 0xC2.toByte(), 0x01, 0x00, // 115200 baud, little endian

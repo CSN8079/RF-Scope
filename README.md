@@ -21,7 +21,13 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - TinySA VID 0x0483 / PID 0x5740 识别、USB 权限请求和 USB 设备选择器。
 - TinySA `scanraw` 串口读取：400–500 MHz、200 点、峰值/噪声底/SNR。
 - Wi‑Fi 2.4/5/6 GHz 信道占用图，按信号强度着色。
-- 趋势图按缺失采样断线，并显示相对时间刻度（0s、-Xs、-Xm）。
+- 趋势图按固定 120 秒窗口、缺失采样断线，并显示相对时间刻度（0s、-Xs、-Xm）。
+- 实时 TinySA 频谱扫描、LIVE/STOP、单次扫描和范围预设。
+- 最长 240 帧频谱瀑布图。
+- 峰值强度驱动的自动升调/升音量提示音。
+- RSRP/RSRQ/SINR 三格信号图标。
+- 事件驱动 SignalStrength 回调采样，轮询仅作兜底。
+- Wi‑Fi 信道图改用开口向下的抛物线包络。
 - n41 / FREQ / PCI / RSRP / RSRQ / SINR 重点指标卡。
 - RSRP、RSRQ、SINR 三行并行实时趋势图（最近 60 个采样点）。
 - TinySA Ultra USB 串口传输接口；HT8 作为 TinySA 的下游能力，不由手机直连。
@@ -90,6 +96,7 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 4. 模拟器通常不会返回真实蜂窝小区，必须用带 SIM 的真机验证。
 
 > 本文档和代码骨架中的 WiFi/Telephony 行为均以公开 Android API 为准；不同厂商 ROM 的结果可能显著不同。
+
 
 
 

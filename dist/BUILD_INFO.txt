@@ -3,23 +3,25 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.5.0 (versionCode 5)
+Version: 0.6.0 (versionCode 6)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: f3a2f9a67d3c508281695d642ec94d82b8ae93b2bfc7bccc173c0cef761d18cd
-Size: 24634538 bytes
+APK SHA-256: b021a6d3bffdf28a545cabbe375279d8473fab69afb1c8190c147793b6af4ff7
+Size: 25044726 bytes
 
-Changes in 0.5.0:
-- USB_DEVICE_ATTACHED filter for STM32 CDC VID 0x0483 / PID 0x5740.
-- TinySA USB CDC serial transport and scanraw parser.
-- 400-500 MHz / 200 point test spectrum with peak, noise floor and SNR.
-- Wi-Fi 2.4/5/6 GHz channel occupancy charts.
-- More visible WiFi row separators and chart grid lines.
-- Relative time ticks in signal trend charts; missing samples break lines.
-- Live header clock updates every second, with LAST update time.
+Changes in 0.6.0:
+- Live TinySA scan loop with LIVE/STOP and preset ranges.
+- 240-frame spectrum waterfall.
+- Peak-level-driven rising audio tone.
+- RSRP/RSRQ/SINR 3-bar icons with requested thresholds.
+- Event-driven SignalStrength callbacks with polling fallback.
+- 120-second signal trend window with missing samples broken.
+- WiFi channel charts use downward-opening parabolas.
+- WiFi row selection highlights the row and matching channel curve.
+- USB_DEVICE_ATTACHED filter for VID 0x0483 / PID 0x5740.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.
-- Test spectrum range is currently fixed at 400-500 MHz.
+- TinySA scanrange currently selected by presets 400-500M / 430-440M / 2.4-2.5G.

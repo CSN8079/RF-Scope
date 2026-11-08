@@ -130,7 +130,15 @@ data class TinySaSpectrum(
 data class TinySaUiState(
     val status: TinySaConnectionStatus = TinySaConnectionStatus.DISCONNECTED,
     val spectrum: TinySaSpectrum? = null,
+    val waterfall: List<FloatArray> = emptyList(),
     val isScanning: Boolean = false,
+    val isLive: Boolean = false,
+    val scanStartHz: Long = 400_000_000L,
+    val scanStopHz: Long = 500_000_000L,
+    val scanPoints: Int = 200,
+    val lastScanDurationMs: Long? = null,
+    val isToneEnabled: Boolean = false,
+    val toneFrequencyHz: Double = 440.0,
     val messageEn: String? = null,
     val messageZh: String? = null,
 )
@@ -145,5 +153,7 @@ data class RfScopeUiState(
     val isRefreshing: Boolean = false,
     val lastUpdatedEpochMs: Long? = null,
 )
+
+
 
 

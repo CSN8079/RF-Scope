@@ -21,7 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
@@ -34,6 +36,7 @@ import com.rfscope.app.data.TinySaUiState
 import com.rfscope.app.ui.theme.ScopeAmber
 import com.rfscope.app.ui.theme.ScopeCyan
 import com.rfscope.app.ui.theme.ScopeGreen
+import com.rfscope.app.ui.theme.ScopeGreenDim
 import com.rfscope.app.ui.theme.ScopeGrid
 import com.rfscope.app.ui.theme.ScopeLine
 import com.rfscope.app.ui.theme.ScopeMuted
@@ -47,6 +50,10 @@ fun TinySaPanel(
     state: TinySaUiState,
     onConnect: () -> Unit,
     onScan: () -> Unit,
+    onStartLive: () -> Unit,
+    onStopLive: () -> Unit,
+    onToggleTone: () -> Unit,
+    onSetRange: (Long, Long, Int) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
@@ -142,9 +149,18 @@ fun TinySaPanel(
                         )
                     }
                 }
+                TinySaControls(
+                    state = state,
+                    onStartLive = onStartLive,
+                    onStopLive = onStopLive,
+                    onToggleTone = onToggleTone,
+                    onSetRange = onSetRange,
+                    onScan = onScan,
+                )
                 if (spectrum != null) {
                     SpectrumSummary(spectrum)
                     TinySaSpectrumChart(spectrum)
+                    TinySaWaterfall(state.waterfall)
                 } else {
                     Text(
                         text = "NO SPECTRUM DATA YET  (尚未读取频谱)",
@@ -267,3 +283,117 @@ private fun formatMHz(hz: Long): String = formatMHz(hz.toDouble())
 private fun formatMHz(hz: Double): String = String.format(Locale.US, "%.2f MHz", hz / 1_000_000.0)
 private fun formatDbm(value: Double): String = String.format(Locale.US, "%.1f", value)
 
+
+@Composable
+private fun TinySaControls(
+    state: TinySaUiState,
+    onStartLive: () -> Unit,
+    onStopLive: () -> Unit,
+    onToggleTone: () -> Unit,
+    onSetRange: (Long, Long, Int) -> Unit,
+    onScan: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TextButton(onClick = { onSetRange(400_000_000L, 500_000_000L, 200) }) {
+                Text("400-500M", color = ScopeCyan, fontSize = 8.sp)
+            }
+            TextButton(onClick = { onSetRange(430_000_000L, 440_000_000L, 200) }) {
+                Text("U5 430-440M", color = ScopeCyan, fontSize = 8.sp)
+            }
+            TextButton(onClick = { onSetRange(2_400_000_000L, 2_500_000_000L, 200) }) {
+                Text("2.4-2.5G", color = ScopeCyan, fontSize = 8.sp)
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(
+                onClick = if (state.isLive) onStopLive else onStartLive,
+            ) {
+                Text(
+                    text = if (state.isLive) "STOP LIVE" else "LIVE",
+                    color = if (state.isLive) ScopeRed else ScopeGreen,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            TextButton(onClick = onScan, enabled = !state.isLive) {
+                Text("SINGLE", color = if (state.isLive) ScopeMuted else ScopeGreenDim, fontSize = 9.sp)
+            }
+            TextButton(onClick = onToggleTone) {
+                Text(
+                    text = if (state.isToneEnabled) "TONE ON ${state.toneFrequencyHz.toInt()}Hz" else "TONE OFF",
+                    color = if (state.isToneEnabled) ScopeAmber else ScopeMuted,
+                    fontSize = 8.sp,
+                )
+            }
+        }
+        Text(
+            text = "RANGE ${formatMHz(state.scanStartHz)} - ${formatMHz(state.scanStopHz)}  •  ${state.scanPoints} PTS  •  ${state.lastScanDurationMs ?: 0} ms  •  WF ${state.waterfall.size}",
+            color = ScopeMuted,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 8.sp,
+        )
+    }
+}
+
+@Composable
+private fun TinySaWaterfall(frames: List<FloatArray>) {
+    if (frames.isEmpty()) return
+    val visible = frames.takeLast(240)
+    val columns = visible.firstOrNull()?.size ?: return
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(
+            text = "WATERFALL  (瀑布图)  •  ${visible.size} FRAMES",
+            color = ScopeCyan,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp),
+        ) {
+            val rows = visible.size
+            val cellWidth = size.width / columns
+            val cellHeight = size.height / rows
+            visible.forEachIndexed { rowIndex, frame ->
+                val sourceRow = visible[visible.lastIndex - rowIndex]
+                val y = rowIndex * cellHeight
+                var column = 0
+                while (column < columns) {
+                    val value = sourceRow.getOrNull(column) ?: -120f
+                    drawRect(
+                        color = waterfallColor(value),
+                        topLeft = Offset(column * cellWidth, y),
+                        size = Size(cellWidth * 2f, cellHeight + 0.6f),
+                    )
+                    column += 2
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("LOW", color = ScopeMuted, fontFamily = FontFamily.Monospace, fontSize = 8.sp)
+            Text("TIME  (时间)", color = ScopeMuted, fontFamily = FontFamily.Monospace, fontSize = 8.sp)
+            Text("HIGH", color = ScopeMuted, fontFamily = FontFamily.Monospace, fontSize = 8.sp)
+        }
+    }
+}
+
+private fun waterfallColor(dbm: Float): Color = when {
+    dbm >= -40f -> Color(0xFFFF4040)
+    dbm >= -60f -> Color(0xFFFFD000)
+    dbm >= -80f -> Color(0xFF00C853)
+    dbm >= -100f -> Color(0xFF00695C)
+    else -> Color(0xFF001B16)
+}

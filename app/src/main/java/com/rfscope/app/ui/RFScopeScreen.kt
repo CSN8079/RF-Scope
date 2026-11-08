@@ -86,6 +86,10 @@ fun RFScopeScreen(
     onRequestUsbPermission: () -> Unit,
     onConnectTinySa: () -> Unit,
     onScanTinySa: () -> Unit,
+    onStartTinySaLive: () -> Unit,
+    onStopTinySaLive: () -> Unit,
+    onToggleTinySaTone: () -> Unit,
+    onSetTinySaRange: (Long, Long, Int) -> Unit,
     onRefresh: () -> Unit,
     onScanWifi: () -> Unit,
     onOpenAppSettings: () -> Unit,
@@ -132,6 +136,10 @@ fun RFScopeScreen(
                     onRequestUsbPermission = onRequestUsbPermission,
                     onConnectTinySa = onConnectTinySa,
                     onScanTinySa = onScanTinySa,
+                    onStartTinySaLive = onStartTinySaLive,
+                    onStopTinySaLive = onStopTinySaLive,
+                    onToggleTinySaTone = onToggleTinySaTone,
+                    onSetTinySaRange = onSetTinySaRange,
                     onRefresh = onRefresh,
                 )
             }
@@ -216,6 +224,10 @@ private fun HardwarePage(
     onRequestUsbPermission: () -> Unit,
     onConnectTinySa: () -> Unit,
     onScanTinySa: () -> Unit,
+    onStartTinySaLive: () -> Unit,
+    onStopTinySaLive: () -> Unit,
+    onToggleTinySaTone: () -> Unit,
+    onSetTinySaRange: (Long, Long, Int) -> Unit,
     onRefresh: () -> Unit,
 ) {
     LazyColumn(
@@ -226,7 +238,17 @@ private fun HardwarePage(
         item { HardwarePanel(selectedAntenna) }
         item { AntennaSelector(selectedAntenna, onAntennaSelected) }
         item { UsbDevicePanel(usb, onRefresh, onRequestUsbPermission) }
-        item { TinySaPanel(tinySa, onConnectTinySa, onScanTinySa) }
+        item {
+            TinySaPanel(
+                state = tinySa,
+                onConnect = onConnectTinySa,
+                onScan = onScanTinySa,
+                onStartLive = onStartTinySaLive,
+                onStopLive = onStopTinySaLive,
+                onToggleTone = onToggleTinySaTone,
+                onSetRange = onSetTinySaRange,
+            )
+        }
         item { FooterNote() }
     }
 }
@@ -468,6 +490,7 @@ private fun LiveMetricsPanel(
                         value = snapshot.rsrp?.toString() ?: "—",
                         unit = "dBm",
                         color = ScopeGreen,
+                        bars = signalBarsForMetric(SignalMetric.RSRP, snapshot.rsrp),
                         modifier = Modifier.weight(1f),
                     )
                     HeroMetric(
@@ -476,6 +499,7 @@ private fun LiveMetricsPanel(
                         value = snapshot.rsrq?.toString() ?: "—",
                         unit = "dB",
                         color = ScopeAmber,
+                        bars = signalBarsForMetric(SignalMetric.RSRQ, snapshot.rsrq),
                         modifier = Modifier.weight(1f),
                     )
                     HeroMetric(
@@ -484,6 +508,7 @@ private fun LiveMetricsPanel(
                         value = snapshot.sinr?.toString() ?: "—",
                         unit = "dB",
                         color = if (snapshot.interferenceRisk) ScopeRed else ScopeCyan,
+                        bars = signalBarsForMetric(SignalMetric.SINR, snapshot.sinr),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -522,6 +547,7 @@ private fun HeroMetric(
     value: String,
     unit: String?,
     color: Color,
+    bars: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -560,6 +586,20 @@ private fun HeroMetric(
                 Spacer(Modifier.width(3.dp))
                 Text(
                     text = it,
+                    color = ScopeMuted,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 8.sp,
+                )
+            }
+        }
+        if (bars != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                SignalBars(bars)
+                Text(
+                    text = "$bars/3",
                     color = ScopeMuted,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 8.sp,
@@ -702,6 +742,7 @@ private fun WifiPanel(
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
 ) {
+    var selectedBssid by rememberSaveable { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(
             title = "WI-FI SCAN",
@@ -786,9 +827,9 @@ private fun WifiPanel(
                         fontSize = 9.sp,
                     )
                     val visibleNetworks = outcome.networks.take(12)
-                    WifiChannelChart(outcome.networks, "2.4 GHz")
-                    WifiChannelChart(outcome.networks, "5 GHz")
-                    WifiChannelChart(outcome.networks, "6 GHz")
+                    WifiChannelChart(outcome.networks, "2.4 GHz", selectedBssid)
+                    WifiChannelChart(outcome.networks, "5 GHz", selectedBssid)
+                    WifiChannelChart(outcome.networks, "6 GHz", selectedBssid)
                     ScopeCard {
                         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                             visibleNetworks.forEachIndexed { index, network ->
@@ -797,7 +838,13 @@ private fun WifiPanel(
                                         .fillMaxWidth()
                                         .padding(vertical = 5.dp),
                                 ) {
-                                    WifiRow(network)
+                                    WifiRow(
+                                        network = network,
+                                        selected = network.bssid == selectedBssid,
+                                        onClick = {
+                                            selectedBssid = if (selectedBssid == network.bssid) null else network.bssid
+                                        },
+                                    )
                                 }
                                 if (index < visibleNetworks.lastIndex) {
                                     Box(
@@ -833,9 +880,18 @@ private fun WifiPanel(
 }
 
 @Composable
-private fun WifiRow(network: WifiNetwork) {
+private fun WifiRow(
+    network: WifiNetwork,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(3.dp))
+            .background(if (selected) ScopeGreen.copy(alpha = 0.10f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -850,7 +906,7 @@ private fun WifiRow(network: WifiNetwork) {
             )
             Text(
                 text = "${network.bssid}  •  ${network.band}  •  ${network.standard ?: "—"}",
-                color = ScopeMuted,
+                color = if (selected) ScopeGreenDim else ScopeMuted,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 9.sp,
                 maxLines = 1,
@@ -1341,6 +1397,10 @@ private fun RFScopePreview() {
             onRequestUsbPermission = {},
             onConnectTinySa = {},
             onScanTinySa = {},
+            onStartTinySaLive = {},
+            onStopTinySaLive = {},
+            onToggleTinySaTone = {},
+            onSetTinySaRange = { _, _, _ -> },
             onRefresh = {},
             onScanWifi = {},
             onOpenAppSettings = {},
@@ -1348,6 +1408,10 @@ private fun RFScopePreview() {
         )
     }
 }
+
+
+
+
 
 
 

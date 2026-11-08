@@ -20,6 +20,9 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,15 +40,21 @@ import com.rfscope.app.ui.theme.ScopeWhite
 import java.util.Locale
 
 @Composable
-fun WifiChannelChart(networks: List<WifiNetwork>, band: String) {
+fun WifiChannelChart(
+    networks: List<WifiNetwork>,
+    band: String,
+    selectedBssid: String?,
+) {
     val items = networks.filter { it.band == band && it.channel != null }
     if (items.isEmpty()) return
 
-    val minChannel = items.minOf { it.channel!! }.toFloat()
-    val maxChannel = items.maxOf { it.channel!! }.toFloat()
-    val left = if (minChannel == maxChannel) minChannel - 1f else minChannel
-    val right = if (minChannel == maxChannel) maxChannel + 1f else maxChannel
-    val channelSpan = right - left
+    val (left, right) = when (band) {
+        "2.4 GHz" -> 1f to 14f
+        "5 GHz" -> 36f to 165f
+        "6 GHz" -> 1f to 233f
+        else -> items.minOf { it.channel!! }.toFloat() to items.maxOf { it.channel!! }.toFloat()
+    }
+    val channelSpan = (right - left).coerceAtLeast(1f)
     val yMin = -100f
     val yMax = -20f
 
@@ -117,33 +126,52 @@ fun WifiChannelChart(networks: List<WifiNetwork>, band: String) {
                         )
                     }
 
-                    items.forEach { network ->
+                    items.sortedBy { it.bssid == selectedBssid }.forEach { network ->
                         val channel = network.channel?.toFloat() ?: return@forEach
                         val centerX = ((channel - left) / channelSpan).coerceIn(0f, 1f) * size.width
                         val channelWidth = when (band) {
                             "2.4 GHz" -> ((network.widthMhz ?: 20) / 5f)
                             else -> ((network.widthMhz ?: 20) / 20f)
                         }.coerceAtLeast(0.5f)
-                        val halfWidth = (channelWidth / channelSpan / 2f * size.width)
-                            .coerceAtLeast(3f)
+                        val halfWidthPx = (channelWidth / channelSpan / 2f * size.width)
+                            .coerceAtLeast(4f)
                         val normalized = ((network.levelDbm - yMin) / (yMax - yMin)).coerceIn(0f, 1f)
-                        val top = size.height - normalized * size.height
+                        val peakY = size.height - normalized * size.height
+                        val bottomY = size.height
                         val color = when {
                             network.levelDbm >= -60 -> ScopeGreen
                             network.levelDbm >= -75 -> ScopeAmber
                             else -> ScopeRed
                         }
-                        drawRoundRect(
-                            color = color.copy(alpha = 0.22f),
-                            topLeft = Offset(centerX - halfWidth, top),
-                            size = Size(halfWidth * 2f, size.height - top),
-                            cornerRadius = CornerRadius(3f, 3f),
-                        )
-                        drawLine(
-                            color = color,
-                            start = Offset(centerX - halfWidth, top),
-                            end = Offset(centerX + halfWidth, top),
-                            strokeWidth = 2f,
+                        val isSelected = network.bssid == selectedBssid
+                        val dimmed = selectedBssid != null && !isSelected
+                        val strokeColor = if (dimmed) {
+                            color.copy(alpha = 0.18f)
+                        } else if (isSelected) {
+                            ScopeGreen
+                        } else {
+                            color
+                        }
+                        val fillAlpha = when {
+                            isSelected -> 0.30f
+                            dimmed -> 0.03f
+                            else -> 0.16f
+                        }
+                        val strokeWidth = if (isSelected) 3.5f else 1.8f
+                        val path = Path()
+                        val steps = 24
+                        for (step in 0..steps) {
+                            val ratio = step / steps.toFloat()
+                            val offset = ratio * 2f - 1f
+                            val x = (centerX + offset * halfWidthPx).coerceIn(0f, size.width)
+                            val y = peakY + (bottomY - peakY) * offset * offset
+                            if (step == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        }
+                        drawPath(path = path, color = strokeColor.copy(alpha = fillAlpha))
+                        drawPath(
+                            path = path,
+                            color = strokeColor,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                         )
                     }
                 }
@@ -180,3 +208,5 @@ fun WifiChannelChart(networks: List<WifiNetwork>, band: String) {
         }
     }
 }
+
+
