@@ -199,3 +199,10 @@ This project is released under the MIT License. See [LICENSE](LICENSE) for detai
 - CALC behavior no longer depends on TinySA firmware command support.
 - Changing CALC mode or scan range starts a fresh calculation window.
 - Clean build: dist/RF-Scope-v0.10.3-debug.apk.
+
+
+## v0.10.4 LIVE start fix
+
+- Connecting no longer starts a hidden blocking scan.
+- Tap LIVE or SCAN explicitly after connection.
+- Clean build: dist/RF-Scope-v0.10.4-debug.apk.

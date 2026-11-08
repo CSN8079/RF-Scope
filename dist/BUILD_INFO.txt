@@ -3,22 +3,20 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.10.3 (versionCode 16)
+Version: 0.10.4 (versionCode 17)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: d08fb0fa5b0814a7cca73423e6b45bd4c397311862a0aa6b55913e9e3e3c39ef
-Size: 24945826 bytes
+APK SHA-256: 5ebc47424f8665ad4fa0087ef9ef66abd66b284a5ae683d0520b9c86c531ecc3
+Size: 24945830 bytes
 
-Changes in 0.10.3:
-- CALC / VBW now performs AVER4, AVER16, MAX HOLD and MIN HOLD in the app.
-- scanraw is kept as raw data, so CALC behavior no longer depends on TinySA firmware support.
-- Changing CALC mode or frequency range starts a new calculation window.
-- MAX HOLD accumulates the highest level per frequency bin.
-- MIN HOLD accumulates the lowest level per frequency bin.
-- AVER4 / AVER16 use the selected number of recent sweeps.
-- Includes v0.10.2 TONE REF fix, PAUSE, MAX EVER and the v0.10 visual refresh.
+Changes in 0.10.4:
+- Connecting no longer starts a hidden automatic scan that can block the LIVE button.
+- After connection, tap LIVE or SCAN explicitly.
+- Connecting resets scanning/live state and shows a clear instruction.
+- LIVE starts immediately from a clean transport state.
+- Includes v0.10.3 software CALC modes, v0.10.2 TONE REF fix, PAUSE, and MAX EVER.
 
 Notes:
 - Debug certificate; not for Play Store publishing.

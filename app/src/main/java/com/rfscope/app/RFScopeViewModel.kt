@@ -111,13 +111,14 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                     it.copy(
                         tinySa = it.tinySa.copy(
                             status = TinySaConnectionStatus.CONNECTED,
-                            messageEn = "TinySA connected",
-                            messageZh = "TinySA 已连接",
+                            messageEn = "TinySA connected. Tap LIVE or SCAN.",
+                            messageZh = "TinySA \u5df2\u8fde\u63a5\uff0c\u8bf7\u70b9\u51fb LIVE \u6216 SCAN",
+                            isScanning = false,
+                            isLive = false,
+                            isPaused = false,
                         ),
                     )
-                }
-                scanTinySa()
-            }.onFailure { error ->
+                }            }.onFailure { error ->
                 _uiState.update {
                     it.copy(
                         tinySa = it.tinySa.copy(
