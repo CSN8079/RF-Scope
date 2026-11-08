@@ -183,9 +183,11 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
                 result.onSuccess { spectrum ->
                     if (!isActive || _uiState.value.tinySa.isPaused) return@onSuccess
                     val duration = System.currentTimeMillis() - startedAt
-                    val toneFrequency = SignalTonePlayer.frequencyForLevel(spectrum.peakDbm)
-                    if (_uiState.value.tinySa.isToneEnabled) {
-                        tonePlayer.updateLevel(spectrum.peakDbm)
+                    val toneState = _uiState.value.tinySa
+                    val toneLevel = toneLevelFor(spectrum, toneState)
+                    val toneFrequency = SignalTonePlayer.frequencyForLevel(toneLevel, toneState.toneReferenceDbm)
+                    if (toneState.isToneEnabled) {
+                        tonePlayer.updateLevel(toneLevel, toneState.toneReferenceDbm)
                     }
                     _uiState.update { state ->
                         val frames = (state.tinySa.waterfall + TinySaWaterfallRow(spectrum.capturedAtMs, FloatArray(spectrum.powersDbm.size) { spectrum.powersDbm[it].toFloat() }, startHz = spectrum.startHz, stopHz = spectrum.stopHz))
@@ -299,7 +301,11 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
         val enabled = !_uiState.value.tinySa.isToneEnabled
         if (enabled) {
             tonePlayer.start()
-            _uiState.value.tinySa.spectrum?.let { tonePlayer.updateLevel(it.peakDbm) }
+            val current = _uiState.value.tinySa
+            current.spectrum?.let { spectrum ->
+                val level = toneLevelFor(spectrum, current)
+                tonePlayer.updateLevel(level, current.toneReferenceDbm)
+            }
         } else {
             tonePlayer.stop()
         }
@@ -330,9 +336,11 @@ class RFScopeViewModel(application: Application) : AndroidViewModel(application)
             }
             result.onSuccess { spectrum ->
                 val duration = System.currentTimeMillis() - startedAt
-                val toneFrequency = SignalTonePlayer.frequencyForLevel(spectrum.peakDbm)
-                if (_uiState.value.tinySa.isToneEnabled) {
-                    tonePlayer.updateLevel(spectrum.peakDbm)
+                val toneState = _uiState.value.tinySa
+                val toneLevel = toneLevelFor(spectrum, toneState)
+                val toneFrequency = SignalTonePlayer.frequencyForLevel(toneLevel, toneState.toneReferenceDbm)
+                if (toneState.isToneEnabled) {
+                    tonePlayer.updateLevel(toneLevel, toneState.toneReferenceDbm)
                 }
                 _uiState.update { state ->
                         val frames = (state.tinySa.waterfall + TinySaWaterfallRow(spectrum.capturedAtMs, FloatArray(spectrum.powersDbm.size) { spectrum.powersDbm[it].toFloat() }, startHz = spectrum.startHz, stopHz = spectrum.stopHz))

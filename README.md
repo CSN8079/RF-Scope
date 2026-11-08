@@ -184,3 +184,10 @@ This project is released under the MIT License. See [LICENSE](LICENSE) for detai
 - MARKER tab shows MAX EVER with a RESET MAX button.
 - Live cellular polling interval reduced to one second.
 - Clean build: dist/RF-Scope-v0.10.1-debug.apk.
+
+
+## v0.10.2 TONE REF fix
+
+- Live and single scans now preserve the selected TONE REF value.
+- TONE mode and reference level are applied consistently on every scan.
+- Clean build: dist/RF-Scope-v0.10.2-debug.apk.
