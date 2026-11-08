@@ -128,3 +128,13 @@ Android 10+（minSdk 29）Kotlin + Jetpack Compose 的 RF/网络监测 App 骨�
 - Manual dBm display range in the LEVEL tab.
 - RBW options now include 600k and 850k.
 - Clean build: dist/RF-Scope-v0.9.0-debug.apk.
+
+
+## v0.9.1 menu layout fixes
+
+- Main controls fit on one screen without horizontal scrolling.
+- FREQ input fields have enough height for the full number.
+- RBW and VBW/AVG options wrap into aligned rows.
+- Menu tabs have a clear active state and divider before content.
+- Scale range uses a readable connector and includes 850k RBW.
+- Clean build: dist/RF-Scope-v0.9.1-debug.apk.

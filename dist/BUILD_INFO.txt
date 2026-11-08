@@ -3,23 +3,22 @@ RF-Scope APK build information
 
 App name: RF-Scope
 Package: com.rfscope.app
-Version: 0.9.0 (versionCode 9)
+Version: 0.9.1 (versionCode 10)
 Build type: debug (installable; Android Debug certificate)
 Min SDK: 29 (Android 10)
 Target/compile SDK: 34 (Android 14)
 Built at: 2026-11-08 (Asia/Shanghai)
-APK SHA-256: 5d3877f30b141ede090e1f0f49d07d7231b80cc816f007aeb0882c44c831cbfc
+APK SHA-256: ff9efbf7f992a01c44866b880ec0ee001c40a680de48233cf168a4c8cb2b0e8f
 Size: 24929450 bytes
 
-Changes in 0.9.0:
-- Live spectrum performance: incremental bitmap waterfall renderer.
-- Waterfall viewport is now 120 rows at 2dp per row, no per-scan full redraw.
-- RBW and AVG settings are sent only when changed.
-- TinySA-style tabbed menu: FREQ / LEVEL / MARKER / MEASURE / CONFIG.
-- LIVE, SINGLE, TONE, TONE mode, and TONE REF are on the main screen.
-- LEVEL tab supports auto/manual dBm scale and top/bottom range adjustment.
-- Added RBW 600k and 850k options.
-- Spectrum and waterfall stay frequency-locked with the same plot gutter.
+Changes in 0.9.1:
+- Main quick controls are fixed on one screen with no horizontal swipe.
+- LIVE / SINGLE / TONE / MENU and tone modes are all visible at once.
+- FREQ input fields are taller and no longer clip the number.
+- Manual scale range uses a clear connector instead of double periods.
+- RBW and VBW/AVG options wrap to the next line and align left.
+- FREQ / LEVEL / MARKER / MEASURE / CONFIG tabs are visually separated from content.
+- Added the 850k RBW option.
 
 Notes:
 - Debug certificate; not suitable for Play Store publishing.

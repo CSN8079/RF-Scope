@@ -10,6 +10,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -101,29 +103,43 @@ fun TinySaMainControls(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             MiniActionButton(
-                label = if (state.isLive) "STOP LIVE" else "LIVE",
+                label = if (state.isLive) "STOP" else "LIVE",
                 active = state.isLive,
                 activeColor = ScopeRed,
+                modifier = Modifier.weight(1f),
                 onClick = if (state.isLive) onStopLive else onStartLive,
             )
             MiniActionButton(
                 label = "SINGLE",
                 enabled = !state.isLive,
+                modifier = Modifier.weight(1f),
                 onClick = onScan,
             )
             MiniActionButton(
                 label = "TONE",
                 active = state.isToneEnabled,
                 activeColor = ScopeAmber,
+                modifier = Modifier.weight(1f),
                 onClick = onToggleTone,
             )
+            MiniActionButton(
+                label = "MENU",
+                active = true,
+                activeColor = ScopeCyan,
+                modifier = Modifier.weight(1f),
+                onClick = onOpenMenu,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             listOf(
                 "PEAK" to TinySaToneMode.PEAK,
                 "AVG" to TinySaToneMode.AVERAGE,
@@ -133,17 +149,11 @@ fun TinySaMainControls(
                     label = label,
                     active = state.toneMode == mode,
                     activeColor = ScopeGreen,
+                    modifier = Modifier.weight(1f),
                     onClick = { onSetToneMode(mode) },
                 )
             }
-            MiniActionButton(
-                label = "MENU",
-                active = true,
-                activeColor = ScopeCyan,
-                onClick = onOpenMenu,
-            )
         }
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -166,19 +176,19 @@ fun TinySaMainControls(
         }
     }
 }
-
 @Composable
 private fun MiniActionButton(
     label: String,
     active: Boolean = false,
     activeColor: Color = ScopeGreen,
     enabled: Boolean = true,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.height(28.dp),
+        modifier = modifier.height(28.dp),
         contentPadding = PaddingValues(horizontal = 7.dp, vertical = 0.dp),
     ) {
         Text(
@@ -226,9 +236,9 @@ fun TinySaSdrDisplay(state: TinySaUiState) {
             )
             Text(
                 text = if (state.spectrumScaleAuto) {
-                    "AUTO ${scale.minDbm.toInt()}..${scale.maxDbm.toInt()} dBm"
+                    "AUTO ${scale.minDbm.toInt()} \u81f3 ${scale.maxDbm.toInt()} dBm"
                 } else {
-                    "MANUAL ${scale.minDbm.toInt()}..${scale.maxDbm.toInt()} dBm"
+                    "MANUAL ${scale.minDbm.toInt()} \u81f3 ${scale.maxDbm.toInt()} dBm"
                 },
                 color = if (state.spectrumScaleAuto) ScopeMuted else ScopeAmber,
                 fontFamily = FontFamily.Monospace,
@@ -776,27 +786,44 @@ fun TinySaMenuDialogV2(
                 }
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     listOf("FREQ", "LEVEL", "MARKER", "MEASURE", "CONFIG").forEachIndexed { index, label ->
                         TextButton(
                             onClick = { tab = index },
-                            modifier = Modifier.height(28.dp),
-                            contentPadding = PaddingValues(horizontal = 7.dp, vertical = 0.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(28.dp)
+                                .background(
+                                    color = if (tab == index) ScopeGreen.copy(alpha = 0.14f) else Color.Transparent,
+                                    shape = RoundedCornerShape(2.dp),
+                                ),
+                            contentPadding = PaddingValues(0.dp),
                         ) {
                             Text(
                                 text = label,
                                 color = if (tab == index) ScopeGreen else ScopeMuted,
                                 fontFamily = FontFamily.Monospace,
-                                fontSize = 8.sp,
+                                fontSize = 7.sp,
                                 fontWeight = if (tab == index) FontWeight.Bold else FontWeight.Normal,
                             )
                         }
                     }
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(ScopeLine),
+                )
+                Text(
+                    text = "SETTINGS / ${listOf("FREQ", "LEVEL", "MARKER", "MEASURE", "CONFIG")[tab]}",
+                    color = ScopeCyan,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                )
 
                 when (tab) {
                     0 -> FreqMenuContent(
@@ -870,6 +897,7 @@ fun TinySaMenuDialogV2(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FreqMenuContent(
     state: TinySaUiState,
@@ -902,9 +930,10 @@ private fun FreqMenuContent(
                 },
             )
         }
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             listOf(
                 "88-108M" to (88_000_000L to 108_000_000L),
@@ -914,9 +943,19 @@ private fun FreqMenuContent(
                 "2.4-2.5G" to (2_400_000_000L to 2_500_000_000L),
                 "3.4-3.6G" to (3_400_000_000L to 3_600_000_000L),
             ).forEach { (label, range) ->
-                MiniActionButton(label, onClick = { onSetRange(range.first, range.second, state.scanPoints) })
+                MiniActionButton(
+                    label = label,
+                    modifier = Modifier.width(82.dp),
+                    onClick = { onSetRange(range.first, range.second, state.scanPoints) },
+                )
             }
-            MiniActionButton("CARRIER", active = true, activeColor = ScopeAmber, onClick = onShowCarrier)
+            MiniActionButton(
+                label = "CARRIER",
+                active = true,
+                activeColor = ScopeAmber,
+                modifier = Modifier.width(82.dp),
+                onClick = onShowCarrier,
+            )
         }
         Text(
             "RANGE ${sdrFormatHz(state.scanStartHz)} - ${sdrFormatHz(state.scanStopHz)}  |  ${state.scanPoints} PTS",
@@ -927,6 +966,7 @@ private fun FreqMenuContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LevelMenuContent(
     state: TinySaUiState,
@@ -943,7 +983,7 @@ private fun LevelMenuContent(
             Text("SCALE", color = ScopeMuted, fontSize = 8.sp)
             MiniActionButton("AUTO", active = state.spectrumScaleAuto, onClick = { onSetSpectrumScaleAuto(true) })
             MiniActionButton("MANUAL", active = !state.spectrumScaleAuto, activeColor = ScopeAmber, onClick = { onSetSpectrumScaleAuto(false) })
-            Text("${state.spectrumScaleMinDbm.toInt()}..${state.spectrumScaleMaxDbm.toInt()} dBm", color = ScopeAmber, fontSize = 8.sp)
+            Text("${state.spectrumScaleMinDbm.toInt()} \u81f3 ${state.spectrumScaleMaxDbm.toInt()} dBm", color = ScopeAmber, fontSize = 8.sp)
         }
         if (!state.spectrumScaleAuto) {
             MenuSliderRow("TOP", state.spectrumScaleMaxDbm.toFloat(), -140f..10f) {
@@ -953,25 +993,30 @@ private fun LevelMenuContent(
                 onSetSpectrumScaleMin(it.toDouble())
             }
         }
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Text("RBW", color = ScopeMuted, fontSize = 8.sp)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text("RBW", color = ScopeMuted, fontSize = 8.sp)
             listOf<Pair<String, Int?>>("AUTO" to null, "3k" to 3, "10k" to 10, "30k" to 30, "100k" to 100, "300k" to 300, "600k" to 600, "850k" to 850, "1M" to 1000).forEach { (label, value) ->
-                MiniActionButton(label, active = state.rbwKhz == value, onClick = { onSetRbw(value) })
+                MiniActionButton(
+                    label = label,
+                    active = state.rbwKhz == value,
+                    modifier = Modifier.width(47.dp),
+                    onClick = { onSetRbw(value) },
+                )
             }
         }
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Text("VBW / AVG", color = ScopeMuted, fontSize = 8.sp)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text("AVG", color = ScopeMuted, fontSize = 8.sp)
-            MiniActionButton("OFF", active = state.averageMode == TinySaAverageMode.OFF, onClick = { onSetAverage(TinySaAverageMode.OFF) })
-            MiniActionButton("4x", active = state.averageMode == TinySaAverageMode.AVER4, onClick = { onSetAverage(TinySaAverageMode.AVER4) })
-            MiniActionButton("16x", active = state.averageMode == TinySaAverageMode.AVER16, onClick = { onSetAverage(TinySaAverageMode.AVER16) })
+            MiniActionButton("OFF", active = state.averageMode == TinySaAverageMode.OFF, modifier = Modifier.width(52.dp), onClick = { onSetAverage(TinySaAverageMode.OFF) })
+            MiniActionButton("4x", active = state.averageMode == TinySaAverageMode.AVER4, modifier = Modifier.width(52.dp), onClick = { onSetAverage(TinySaAverageMode.AVER4) })
+            MiniActionButton("16x", active = state.averageMode == TinySaAverageMode.AVER16, modifier = Modifier.width(52.dp), onClick = { onSetAverage(TinySaAverageMode.AVER16) })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             MiniActionButton(
@@ -1104,7 +1149,7 @@ private fun MenuField(value: String, onValueChange: (String) -> Unit, label: Str
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.height(44.dp),
+        modifier = modifier.height(60.dp),
         singleLine = true,
         label = { Text(label, fontSize = 7.sp, fontFamily = FontFamily.Monospace) },
         textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = ScopeWhite),
